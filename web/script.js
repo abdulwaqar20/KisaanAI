@@ -2,7 +2,7 @@
    KisaanAI Pro - script.js
    Vanilla JavaScript, no dependencies.
 
-   BACKEND CONTRACT (used when an API base URL is set under "Backend")
+   BACKEND CONTRACT
    -------------------------------------------------------------------
    POST {API_URL}/diagnose        multipart/form-data
        image       leaf photo file                (required)
@@ -25,15 +25,6 @@
          "audio_url" | "audio_base64" (+ optional "audio_mime"),
          "trace":     [ { agent, seconds, output } ]
        }
-   This is the same shape that run_pipeline() in agents.py returns.
-
-   NDJSON mode: one JSON object per line, either
-       {"type":"step","agent":"2 Diagnosis","seconds":1.1}
-       {"type":"result","data":{ ...the object above... }}
-       {"type":"error","message":"..."}
-
-   With no API URL the interface runs in demo mode and shows clearly
-   labelled sample data. Nothing is sent anywhere in demo mode.
    ========================================================================== */
 
 (() => {
@@ -130,7 +121,7 @@
 
   const els = {};
   [
-    'modePill', 'modeLabel', 'settingsBtn', 'settingsDialog', 'apiUrlInput',
+    'modePill', 'modeLabel',
     'dropzone', 'photoInput', 'cameraInput', 'dzIdle', 'dzPreview', 'photoPreview', 'photoName', 'photoSize',
     'photoRemove', 'browseBtn', 'cameraBtn',
     'voiceTabs', 'recorder', 'recBtn', 'recIcon', 'recTimer', 'recStatus', 'waveCanvas',
@@ -153,6 +144,7 @@
    * Toasts
    * ------------------------------------------------------------------ */
   function toast(message, type = 'info', ms = 5000) {
+    if (!els.toasts) return;
     while (els.toasts.children.length >= 4) els.toasts.firstElementChild.remove();
     const el = document.createElement('div');
     el.className = 'toast';
@@ -179,6 +171,7 @@
   }
 
   function applyDir(el, text) {
+    if (!el) return;
     const d = detectDir(text ?? ('value' in el ? el.value : el.textContent));
     if (d === null) {
       el.setAttribute('dir', 'auto');
@@ -201,7 +194,7 @@
     const fromQuery = new URLSearchParams(location.search).get('api');
     state.apiUrl = (fromQuery || storage.get(CONFIG.STORAGE_KEY) || '').trim().replace(/\/+$/, '');
     updateMode();
-    if (!state.apiUrl && /^https?:$/.test(location.protocol)) {   // served by the KisaanAI backend itself: go live
+    if (!state.apiUrl && /^https?:$/.test(location.protocol)) {
       fetch('/health').then((r) => (r.ok ? r.json() : null)).then((j) => {
         if (j && j.app === 'kisaanai') { state.apiUrl = location.origin; updateMode(); }
       }).catch(() => {});
@@ -209,6 +202,7 @@
   }
 
   function updateMode() {
+    if (!els.modePill || !els.modeLabel) return;
     const live = !!state.apiUrl;
     els.modePill.dataset.mode = live ? 'live' : 'demo';
     let label = 'Demo mode';
@@ -218,38 +212,14 @@
     els.modeLabel.textContent = label;
     els.modePill.title = live
       ? 'Diagnoses are sent to your backend.'
-      : 'No backend is set. Sample data is shown. Open Backend to connect your API.';
+      : 'No backend is set. Sample data is shown.';
   }
-
-  function bindSettings() {
-    // If the control trigger elements are completely omitted from the HTML node layout tree templates, bypass
-    if (els.settingsBtn && els.apiUrlInput && els.settingsDialog) {
-      els.settingsBtn.addEventListener('click', () => {
-        els.apiUrlInput.value = state.apiUrl;
-        els.settingsDialog.returnValue = '';
-        els.settingsDialog.showModal();
-        els.apiUrlInput.focus();
-      });
-    }
-    
-    if (els.settingsDialog) {
-      els.settingsDialog.addEventListener('close', () => {
-        if (els.settingsDialog.returnValue !== 'save') return;
-        if (els.apiUrlInput) {
-          state.apiUrl = els.apiUrlInput.value.trim().replace(/\/+$/, '');
-          storage.set(CONFIG.STORAGE_KEY, state.apiUrl);
-          updateMode();
-          toast(state.apiUrl ? 'Backend saved. Diagnoses now run for real.' : 'Backend cleared. Sample data will be shown.', 'success');
-        }
-      });
-    }
-  }
-
 
   /* ------------------------------------------------------------------ *
    * Drag and drop helper
    * ------------------------------------------------------------------ */
   function bindDrop(el, onFiles) {
+    if (!el) return;
     let depth = 0;
     el.addEventListener('dragenter', (e) => { e.preventDefault(); depth++; el.classList.add('is-dragover'); });
     el.addEventListener('dragover', (e) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; });
@@ -261,6 +231,7 @@
   }
 
   function clickOnKey(el) {
+    if (!el) return;
     el.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
     });
@@ -296,30 +267,33 @@
     if (state.photoUrl) URL.revokeObjectURL(state.photoUrl);
     state.photo = null;
     state.photoUrl = null;
-    els.photoPreview.removeAttribute('src');
-    els.photoInput.value = '';
-    els.cameraInput.value = '';
-    els.dzIdle.hidden = false;
-    els.dzPreview.hidden = true;
-    els.dropzone.classList.remove('has-file');
-    els.dropzone.setAttribute('aria-label', 'Add a leaf photo. Press Enter to browse files.');
+    if (els.photoPreview) els.photoPreview.removeAttribute('src');
+    if (els.photoInput) els.photoInput.value = '';
+    if (els.cameraInput) els.cameraInput.value = '';
+    if (els.dzIdle) els.dzIdle.hidden = false;
+    if (els.dzPreview) els.dzPreview.hidden = true;
+    if (els.dropzone) {
+      els.dropzone.classList.remove('has-file');
+      els.dropzone.setAttribute('aria-label', 'Add a leaf photo. Press Enter to browse files.');
+    }
     updateCta();
   }
 
   function bindPhoto() {
+    if (!els.dropzone) return;
     els.dropzone.addEventListener('click', (e) => {
       if (e.target.closest('#photoRemove')) return;
-      if (!state.photo) els.photoInput.click();
+      if (!state.photo && els.photoInput) els.photoInput.click();
     });
     clickOnKey(els.dropzone);
     els.dropzone.addEventListener('keydown', (e) => {
       if ((e.key === 'Delete' || e.key === 'Backspace') && state.photo) clearPhoto();
     });
-    els.browseBtn.addEventListener('click', () => els.photoInput.click());
-    els.cameraBtn.addEventListener('click', () => els.cameraInput.click());
-    els.photoInput.addEventListener('change', () => setPhoto(els.photoInput.files[0]));
-    els.cameraInput.addEventListener('change', () => setPhoto(els.cameraInput.files[0]));
-    els.photoRemove.addEventListener('click', (e) => { e.stopPropagation(); clearPhoto(); });
+    if (els.browseBtn) els.browseBtn.addEventListener('click', () => els.photoInput && els.photoInput.click());
+    if (els.cameraBtn) els.cameraBtn.addEventListener('click', () => els.cameraInput && els.cameraInput.click());
+    if (els.photoInput) els.photoInput.addEventListener('change', () => setPhoto(els.photoInput.files[0]));
+    if (els.cameraInput) els.cameraInput.addEventListener('change', () => setPhoto(els.cameraInput.files[0]));
+    if (els.photoRemove) els.photoRemove.addEventListener('click', (e) => { e.stopPropagation(); clearPhoto(); });
     bindDrop(els.dropzone, (files) => setPhoto(files.find((f) => f.type.startsWith('image/')) || files[0]));
 
     document.addEventListener('paste', (e) => {
@@ -332,7 +306,6 @@
       }
     });
 
-    // Stop the browser from navigating away when a file misses a drop target.
     ['dragover', 'drop'].forEach((t) => window.addEventListener(t, (e) => e.preventDefault()));
   }
 
@@ -340,17 +313,20 @@
    * Voice: tabs
    * ------------------------------------------------------------------ */
   function selectPane(name, focus = false) {
+    if (!els.voiceTabs) return;
     const tabs = Array.from(els.voiceTabs.querySelectorAll('[role="tab"]'));
     tabs.forEach((t) => {
       const on = t.dataset.pane === name;
       t.setAttribute('aria-selected', String(on));
       t.tabIndex = on ? 0 : -1;
-      $(t.getAttribute('aria-controls')).hidden = !on;
+      const pane = $(t.getAttribute('aria-controls'));
+      if (pane) pane.hidden = !on;
       if (on && focus) t.focus();
     });
   }
 
   function bindTabs() {
+    if (!els.voiceTabs) return;
     const tabs = Array.from(els.voiceTabs.querySelectorAll('[role="tab"]'));
     tabs.forEach((t, i) => {
       t.addEventListener('click', () => selectPane(t.dataset.pane));
@@ -376,6 +352,7 @@
   const idleLevels = () => Array.from({ length: BAR_COUNT }, (_, i) => 0.08 + 0.06 * Math.abs(Math.sin(i * 0.7)));
 
   function sizeCanvas() {
+    if (!els.waveCanvas) return;
     const c = els.waveCanvas;
     const dpr = window.devicePixelRatio || 1;
     const r = c.getBoundingClientRect();
@@ -384,6 +361,7 @@
   }
 
   function drawBars(levels, active) {
+    if (!els.waveCanvas) return;
     const c = els.waveCanvas;
     const g = c.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
@@ -417,9 +395,9 @@
   }
 
   function setRecUi(recording) {
-    els.recorder.classList.toggle('is-recording', recording);
-    els.recBtn.setAttribute('aria-label', recording ? 'Stop recording' : 'Start recording');
-    els.recIcon.querySelector('use').setAttribute('href', recording ? '#i-stop' : '#i-mic');
+    if (els.recorder) els.recorder.classList.toggle('is-recording', recording);
+    if (els.recBtn) els.recBtn.setAttribute('aria-label', recording ? 'Stop recording' : 'Start recording');
+    if (els.recIcon) els.recIcon.querySelector('use').setAttribute('href', recording ? '#i-stop' : '#i-mic');
   }
 
   async function startRecording() {
@@ -457,11 +435,11 @@
     rec.startedAt = performance.now();
     rec.lastPush = 0;
     setRecUi(true);
-    els.recStatus.textContent = 'Recording. Tap again to stop.';
-    els.recTimer.textContent = '0:00';
+    if (els.recStatus) els.recStatus.textContent = 'Recording. Tap again to stop.';
+    if (els.recTimer) els.recTimer.textContent = '0:00';
     rec.timer = setInterval(() => {
       const s = (performance.now() - rec.startedAt) / 1000;
-      els.recTimer.textContent = formatTime(s);
+      if (els.recTimer) els.recTimer.textContent = formatTime(s);
       if (s >= CONFIG.MAX_RECORD_SECONDS) stopRecording();
     }, 200);
     drawLoop();
@@ -499,17 +477,17 @@
     const type = (rec.mr && rec.mr.mimeType) || rec.mime || 'audio/webm';
     const blob = new Blob(rec.chunks, { type });
     if (!blob.size) {
-      els.recStatus.textContent = 'Nothing was recorded. Tap the microphone and try again.';
+      if (els.recStatus) els.recStatus.textContent = 'Nothing was recorded. Tap the microphone and try again.';
       return;
     }
     const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
     setAudio(blob, `voice-note.${ext}`, 'record');
-    els.recStatus.textContent = 'Recording saved. Play it back or record again.';
+    if (els.recStatus) els.recStatus.textContent = 'Recording saved. Play it back or record again.';
   }
 
   function bindRecorder() {
-    els.recBtn.addEventListener('click', () => (rec.active ? stopRecording() : startRecording()));
-    els.recClear.addEventListener('click', () => { clearAudio(); els.recStatus.textContent = 'Tap the microphone and start speaking'; els.recTimer.textContent = '0:00'; });
+    if (els.recBtn) els.recBtn.addEventListener('click', () => (rec.active ? stopRecording() : startRecording()));
+    if (els.recClear) els.recClear.addEventListener('click', () => { clearAudio(); if (els.recStatus) els.recStatus.textContent = 'Tap the microphone and start speaking'; if (els.recTimer) els.recTimer.textContent = '0:00'; });
     sizeCanvas();
     drawBars(idleLevels(), false);
     window.addEventListener('resize', () => { sizeCanvas(); if (!rec.active) drawBars(idleLevels(), false); });
@@ -525,11 +503,11 @@
     state.audioSource = source;
     state.audioUrl = URL.createObjectURL(blob);
     if (source === 'record') {
-      els.recPlayback.src = state.audioUrl;
-      els.recPlaybackWrap.hidden = false;
+      if (els.recPlayback) els.recPlayback.src = state.audioUrl;
+      if (els.recPlaybackWrap) els.recPlaybackWrap.hidden = false;
     } else {
-      els.uploadPlayback.src = state.audioUrl;
-      els.uploadPlaybackWrap.hidden = false;
+      if (els.uploadPlayback) els.uploadPlayback.src = state.audioUrl;
+      if (els.uploadPlaybackWrap) els.uploadPlaybackWrap.hidden = false;
     }
     updateCta();
   }
@@ -541,12 +519,12 @@
     state.audioName = '';
     state.audioSource = '';
     state.audioUrl = null;
-    [els.recPlayback, els.uploadPlayback].forEach((a) => { a.pause(); a.removeAttribute('src'); a.load(); });
-    els.recPlaybackWrap.hidden = true;
-    els.uploadPlaybackWrap.hidden = true;
-    els.audioInput.value = '';
-    els.audioFileTitle.textContent = 'Drop an audio file or choose one';
-    els.audioFileMeta.textContent = 'MP3, WAV, M4A, OGG or WebM, up to 20 MB';
+    [els.recPlayback, els.uploadPlayback].forEach((a) => { if (a) { a.pause(); a.removeAttribute('src'); a.load(); } });
+    if (els.recPlaybackWrap) els.recPlaybackWrap.hidden = true;
+    if (els.uploadPlaybackWrap) els.uploadPlaybackWrap.hidden = true;
+    if (els.audioInput) els.audioInput.value = '';
+    if (els.audioFileTitle) els.audioFileTitle.textContent = 'Drop an audio file or choose one';
+    if (els.audioFileMeta) els.audioFileMeta.textContent = 'MP3, WAV, M4A, OGG or WebM, up to 20 MB';
     if (!silent) updateCta();
   }
 
@@ -559,23 +537,27 @@
       return;
     }
     setAudio(file, file.name, 'upload');
-    els.audioFileTitle.textContent = file.name;
-    els.audioFileMeta.textContent = formatBytes(file.size);
+    if (els.audioFileTitle) els.audioFileTitle.textContent = file.name;
+    if (els.audioFileMeta) els.audioFileMeta.textContent = formatBytes(file.size);
   }
 
   function bindUploadAndText() {
-    els.audioDrop.addEventListener('click', () => els.audioInput.click());
-    clickOnKey(els.audioDrop);
-    els.audioInput.addEventListener('change', () => handleAudioFile(els.audioInput.files[0]));
-    bindDrop(els.audioDrop, (files) => handleAudioFile(files[0]));
-    els.audioClear.addEventListener('click', () => clearAudio());
+    if (els.audioDrop) {
+      els.audioDrop.addEventListener('click', () => els.audioInput && els.audioInput.click());
+      clickOnKey(els.audioDrop);
+      bindDrop(els.audioDrop, (files) => handleAudioFile(files[0]));
+    }
+    if (els.audioInput) els.audioInput.addEventListener('change', () => handleAudioFile(els.audioInput.files[0]));
+    if (els.audioClear) els.audioClear.addEventListener('click', () => clearAudio());
 
-    els.typedText.addEventListener('input', () => {
-      state.text = els.typedText.value;
-      applyDir(els.typedText);
-      updateCta();
-    });
-    els.districtSelect.addEventListener('change', () => { state.district = els.districtSelect.value; });
+    if (els.typedText) {
+      els.typedText.addEventListener('input', () => {
+        state.text = els.typedText.value;
+        applyDir(els.typedText);
+        updateCta();
+      });
+    }
+    if (els.districtSelect) els.districtSelect.addEventListener('change', () => { state.district = els.districtSelect.value; });
   }
 
   /* ------------------------------------------------------------------ *
@@ -584,30 +566,35 @@
   function updateCta() {
     const hasPhoto = !!state.photo;
     const hasVoice = !!state.audioBlob || state.text.trim().length > 0;
-    els.reqPhoto.classList.toggle('is-done', hasPhoto);
-    els.reqVoice.classList.toggle('is-done', hasVoice);
-    els.runBtn.disabled = !(hasPhoto && hasVoice) || state.running;
+    if (els.reqPhoto) els.reqPhoto.classList.toggle('is-done', hasPhoto);
+    if (els.reqVoice) els.reqVoice.classList.toggle('is-done', hasVoice);
+    if (els.runBtn) els.runBtn.disabled = !(hasPhoto && hasVoice) || state.running;
 
-    if (state.audioBlob) {
-      els.voiceSource.hidden = false;
-      els.voiceSource.innerHTML = icon('check') + `<span>${state.audioSource === 'record' ? 'Using your recorded voice note' : `Using ${escapeHtml(state.audioName)}`}.</span>`;
-    } else if (state.text.trim()) {
-      els.voiceSource.hidden = false;
-      els.voiceSource.innerHTML = icon('check') + '<span>Using your typed description.</span>';
-    } else {
-      els.voiceSource.hidden = true;
+    if (els.voiceSource) {
+      if (state.audioBlob) {
+        els.voiceSource.hidden = false;
+        els.voiceSource.innerHTML = icon('check') + `<span>${state.audioSource === 'record' ? 'Using your recorded voice note' : `Using ${escapeHtml(state.audioName)}`}.</span>`;
+      } else if (state.text.trim()) {
+        els.voiceSource.hidden = false;
+        els.voiceSource.innerHTML = icon('check') + '<span>Using your typed description.</span>';
+      } else {
+        els.voiceSource.hidden = true;
+      }
     }
 
-    if (!state.running && !state.result) {
+    if (!state.running && !state.result && els.pipelineState) {
       els.pipelineState.textContent = hasPhoto && hasVoice ? 'Ready to run' : 'Waiting for input';
     }
   }
 
   function setBusy(busy) {
-    els.runBtn.classList.toggle('is-busy', busy);
-    els.runBtnLabel.textContent = busy ? 'Agents are working' : 'Diagnose crop';
-    els.runBtn.querySelector('use').setAttribute('href', busy ? '#i-refresh' : '#i-leaf');
-    els.resetBtn.disabled = busy;
+    if (els.runBtn) {
+      els.runBtn.classList.toggle('is-busy', busy);
+      if (els.runBtnLabel) els.runBtnLabel.textContent = busy ? 'Agents are working' : 'Diagnose crop';
+      const useEl = els.runBtn.querySelector('use');
+      if (useEl) useEl.setAttribute('href', busy ? '#i-refresh' : '#i-leaf');
+    }
+    if (els.resetBtn) els.resetBtn.disabled = busy;
     updateCta();
   }
 
@@ -616,6 +603,7 @@
    * ------------------------------------------------------------------ */
   const Stepper = {
     build() {
+      if (!els.stepper) return;
       els.stepper.innerHTML = AGENTS.map((a) => `
         <li class="step" data-state="idle">
           <span class="step-node">${icon(a.icon)}</span>
@@ -624,20 +612,23 @@
           <span class="step-time"></span>
         </li>`).join('');
     },
-    steps() { return Array.from(els.stepper.children); },
+    steps() { return els.stepper ? Array.from(els.stepper.children) : []; },
     reset() {
       this.indeterminate(false);
-      this.steps().forEach((s) => { s.dataset.state = 'idle'; s.querySelector('.step-time').textContent = ''; });
+      this.steps().forEach((s) => { s.dataset.state = 'idle'; const t = s.querySelector('.step-time'); if (t) t.textContent = ''; });
     },
     set(i, st, secs) {
       const s = this.steps()[i];
       if (!s) return;
       s.dataset.state = st;
       const t = s.querySelector('.step-time');
-      if (st === 'skipped') t.textContent = 'Skipped';
-      else if (secs != null && secs !== '') t.textContent = `${secs}s`;
+      if (t) {
+        if (st === 'skipped') t.textContent = 'Skipped';
+        else if (secs != null && secs !== '') t.textContent = `${secs}s`;
+      }
     },
     indeterminate(on) {
+      if (!els.stepper) return;
       if (on) els.stepper.dataset.mode = 'indeterminate';
       else els.stepper.removeAttribute('data-mode');
     },
@@ -660,13 +651,13 @@
   };
 
   function setView(name) {
-    els.viewEmpty.hidden = name !== 'empty';
-    els.viewRunning.hidden = name !== 'running';
-    els.viewResult.hidden = name !== 'result';
+    if (els.viewEmpty) els.viewEmpty.hidden = name !== 'empty';
+    if (els.viewRunning) els.viewRunning.hidden = name !== 'running';
+    if (els.viewResult) els.viewResult.hidden = name !== 'result';
   }
 
   /* ------------------------------------------------------------------ *
-   * Demo data (clearly labelled as sample data in the UI)
+   * Demo data
    * ------------------------------------------------------------------ */
   function makeSilentWav(seconds, rate = 8000) {
     const n = Math.floor(seconds * rate);
@@ -835,7 +826,7 @@
   }
 
   /* ------------------------------------------------------------------ *
-   * Normalise any result into one shape
+   * Normalise result
    * ------------------------------------------------------------------ */
   function resolveAudio(r) {
     if (r._demoAudioBlob) {
@@ -876,6 +867,7 @@
    * Render: results
    * ------------------------------------------------------------------ */
   function countUp(el, to, ms = 900) {
+    if (!el) return;
     if (reducedMotion) { el.textContent = to; return; }
     const t0 = performance.now();
     const step = (t) => {
@@ -889,6 +881,7 @@
   const chip = (inner, cls = '') => `<span class="chip ${cls}">${inner}</span>`;
 
   function renderHeard(heard) {
+    if (!els.heardTranscript) return;
     els.heardTranscript.textContent = heard.transcript || 'No speech or text was detected in the input.';
     applyDir(els.heardTranscript);
 
@@ -898,7 +891,7 @@
     if (heard.duration_days != null) chips.push(chip(`${icon('clock')}<b>${escapeHtml(heard.duration_days)}</b> days`));
     if (heard.district) chips.push(chip(`${icon('pin')}<b>${escapeHtml(heard.district)}</b>`));
     if (heard.urgency) chips.push(chip(`Urgency <b>${escapeHtml(heard.urgency)}</b>`));
-    els.heardChips.innerHTML = chips.join('');
+    if (els.heardChips) els.heardChips.innerHTML = chips.join('');
   }
 
   function renderMetrics(res) {
@@ -907,29 +900,39 @@
     const pct = toPct(d.confidence);
     const low = pct < CONFIG.CONFIDENCE_THRESHOLD;
 
-    els.mCrop.textContent = d.crop || heard.crop || '-';
-    els.mCropSub.textContent = heard.district ? `Field in ${heard.district}` : '';
+    if (els.mCrop) els.mCrop.textContent = d.crop || heard.crop || '-';
+    if (els.mCropSub) els.mCropSub.textContent = heard.district ? `Field in ${heard.district}` : '';
 
     const disease = d.disease === 'healthy' ? 'Healthy' : (d.disease || '-');
-    els.mDisease.textContent = disease;
+    if (els.mDisease) els.mDisease.textContent = disease;
     const evidence = (d.visual_evidence || []).slice(0, 2).join('; ');
-    els.mDiseaseSub.textContent = evidence ? `Seen: ${evidence}` : '';
-    els.mDiseaseSub.title = (d.visual_evidence || []).join('; ');
+    if (els.mDiseaseSub) {
+      els.mDiseaseSub.textContent = evidence ? `Seen: ${evidence}` : '';
+      els.mDiseaseSub.title = (d.visual_evidence || []).join('; ');
+    }
 
-    els.mConfFill.style.width = '0%';
-    els.mConfValue.textContent = '0';
-    els.mConfBar.dataset.level = low ? 'low' : 'ok';
-    els.mConfBar.setAttribute('aria-valuenow', String(pct));
-    els.mConfSub.textContent = low
-      ? 'Below the 60% threshold, so treatment is withheld'
-      : 'Above the 60% threshold';
+    if (els.mConfFill) els.mConfFill.style.width = '0%';
+    if (els.mConfValue) els.mConfValue.textContent = '0';
+    if (els.mConfBar) {
+      els.mConfBar.dataset.level = low ? 'low' : 'ok';
+      els.mConfBar.setAttribute('aria-valuenow', String(pct));
+    }
+    if (els.mConfSub) {
+      els.mConfSub.textContent = low
+        ? 'Below the 60% threshold, so treatment is withheld'
+        : 'Above the 60% threshold';
+    }
     countUp(els.mConfValue, pct);
-    requestAnimationFrame(() => requestAnimationFrame(() => { els.mConfFill.style.width = `${pct}%`; }));
+    requestAnimationFrame(() => requestAnimationFrame(() => { if (els.mConfFill) els.mConfFill.style.width = `${pct}%`; }));
 
     const sev = String(d.severity || 'unknown').toLowerCase();
-    els.mSeverity.textContent = sev;
-    els.mSeverity.dataset.level = ['low', 'medium', 'high'].includes(sev) ? sev : 'unknown';
-    els.mSeveritySub.textContent = sev === 'high' ? 'Act quickly and call an officer' : sev === 'medium' ? 'Act within a few days' : sev === 'low' ? 'Keep watching the field' : '';
+    if (els.mSeverity) {
+      els.mSeverity.textContent = sev;
+      els.mSeverity.dataset.level = ['low', 'medium', 'high'].includes(sev) ? sev : 'unknown';
+    }
+    if (els.mSeveritySub) {
+      els.mSeveritySub.textContent = sev === 'high' ? 'Act quickly and call an officer' : sev === 'medium' ? 'Act within a few days' : sev === 'low' ? 'Keep watching the field' : '';
+    }
   }
 
   function renderAlerts(res) {
@@ -937,35 +940,41 @@
     const v = res.verified;
     const needs = d.needs_follow_up || (d.confidence != null && toPct(d.confidence) < CONFIG.CONFIDENCE_THRESHOLD);
 
-    els.followupAlert.hidden = !needs;
-    if (needs) {
-      const alt = (d.alternatives || []).length ? ` Other possibilities: ${d.alternatives.join(', ')}.` : '';
-      els.followupText.textContent = (d.follow_up_question || 'Show this plant to your local agriculture officer before treating it.') + alt;
+    if (els.followupAlert) {
+      els.followupAlert.hidden = !needs;
+      if (needs && els.followupText) {
+        const alt = (d.alternatives || []).length ? ` Other possibilities: ${d.alternatives.join(', ')}.` : '';
+        els.followupText.textContent = (d.follow_up_question || 'Show this plant to your local agriculture officer before treating it.') + alt;
+      }
     }
 
     const w = v.weather || {};
     const hasWeather = Object.keys(w).length > 0;
-    els.sprayAlert.hidden = !(hasWeather || v.spray_warning);
-    els.sprayAlert.classList.toggle('alert-blue', !!w.ok || !!v.spray_warning);
-    els.sprayAlert.classList.toggle('alert-warn', !w.ok && !v.spray_warning);
+    if (els.sprayAlert) {
+      els.sprayAlert.hidden = !(hasWeather || v.spray_warning);
+      els.sprayAlert.classList.toggle('alert-blue', !!w.ok || !!v.spray_warning);
+      els.sprayAlert.classList.toggle('alert-warn', !w.ok && !v.spray_warning);
 
-    if (!els.sprayAlert.hidden) {
-      if (v.spray_warning) {
-        els.sprayTitle.textContent = 'Check the weather before you spray';
-        els.sprayText.textContent = v.spray_warning;
-      } else if (w.ok) {
-        els.sprayTitle.textContent = 'Spray conditions look fine';
-        els.sprayText.textContent = 'No heavy rain, strong wind or extreme heat is forecast for the next two days.';
-      } else {
-        els.sprayTitle.textContent = 'Weather data was not available';
-        els.sprayText.textContent = 'The spray-timing check was skipped. Avoid spraying if rain is likely.';
+      if (!els.sprayAlert.hidden) {
+        if (v.spray_warning) {
+          if (els.sprayTitle) els.sprayTitle.textContent = 'Check the weather before you spray';
+          if (els.sprayText) els.sprayText.textContent = v.spray_warning;
+        } else if (w.ok) {
+          if (els.sprayTitle) els.sprayTitle.textContent = 'Spray conditions look fine';
+          if (els.sprayText) els.sprayText.textContent = 'No heavy rain, strong wind or extreme heat is forecast for the next two days.';
+        } else {
+          if (els.sprayTitle) els.sprayTitle.textContent = 'Weather data was not available';
+          if (els.sprayText) els.sprayText.textContent = 'The spray-timing check was skipped. Avoid spraying if rain is likely.';
+        }
+        if (els.weatherChips) {
+          els.weatherChips.innerHTML = w.ok ? [
+            chip(`${icon('rain')}Rain today <b>${escapeHtml(w.rain_prob_today ?? '-')}%</b>`),
+            chip(`${icon('rain')}Rain tomorrow <b>${escapeHtml(w.rain_prob_tomorrow ?? '-')}%</b>`),
+            chip(`${icon('thermo')}High <b>${escapeHtml(w.max_temp_c ?? '-')}°C</b>`),
+            chip(`${icon('wind')}Wind <b>${escapeHtml(w.max_wind_kmh ?? '-')} km/h</b>`),
+          ].join('') : '';
+        }
       }
-      els.weatherChips.innerHTML = w.ok ? [
-        chip(`${icon('rain')}Rain today <b>${escapeHtml(w.rain_prob_today ?? '-')}%</b>`),
-        chip(`${icon('rain')}Rain tomorrow <b>${escapeHtml(w.rain_prob_tomorrow ?? '-')}%</b>`),
-        chip(`${icon('thermo')}High <b>${escapeHtml(w.max_temp_c ?? '-')}°C</b>`),
-        chip(`${icon('wind')}Wind <b>${escapeHtml(w.max_wind_kmh ?? '-')} km/h</b>`),
-      ].join('') : '';
     }
   }
 
@@ -975,34 +984,39 @@
     const approved = v.approved || [];
     const rejected = v.rejected || [];
 
-    els.blockedBadge.hidden = !rejected.length;
-    if (rejected.length) {
-      els.blockedBadge.innerHTML = `${icon('shield')}Verifier blocked ${rejected.length} suggestion${rejected.length > 1 ? 's' : ''}`;
-      els.blockedBadge.title = rejected.map((r) => r.reason).filter(Boolean).join('; ');
+    if (els.blockedBadge) {
+      els.blockedBadge.hidden = !rejected.length;
+      if (rejected.length) {
+        els.blockedBadge.innerHTML = `${icon('shield')}Verifier blocked ${rejected.length} suggestion${rejected.length > 1 ? 's' : ''}`;
+        els.blockedBadge.title = rejected.map((r) => r.reason).filter(Boolean).join('; ');
+      }
     }
 
     const has = approved.length > 0;
-    els.treatWrap.hidden = !has;
-    els.treatEmpty.hidden = has;
+    if (els.treatWrap) els.treatWrap.hidden = !has;
+    if (els.treatEmpty) els.treatEmpty.hidden = has;
 
-    els.treatBody.innerHTML = approved.map((r) => {
-      const idx = Array.isArray(r.source_ids) && r.source_ids.length ? Number(r.source_ids[0]) : null;
-      const unver = r.origin === 'web' || r.origin === 'ai';
-      let src = idx !== null && passages[idx] ? passages[idx].source : (Array.isArray(r.sources) && r.sources.length ? r.sources.join('; ') : null);
-      if (unver) src = `${r.origin === 'ai' ? 'AI general knowledge' : 'Web'} (unverified)${src && r.origin === 'web' ? ': ' + src : ''}`;
-      const full = src || '';
-      if (src) src = src.replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim();   // no long URLs in the table
-      if (src && src.length > 70) src = src.slice(0, 67).trim() + '...';
-      const brands = (r.brand_examples || []).length ? escapeHtml(r.brand_examples.join(', ')) : '<span class="nil">None listed</span>';
-      return `<tr>
-        <td data-label="Action" data-autodir>${escapeHtml(r.action || '-')}</td>
-        <td data-label="Active ingredient">${r.active_ingredient ? escapeHtml(r.active_ingredient) : '<span class="nil">Not specified</span>'}</td>
-        <td data-label="Dosage">${r.dosage ? escapeHtml(r.dosage) : chip('Follow the product label', 'chip-quiet')}</td>
-        <td data-label="Brands">${brands}</td>
-        <td data-label="Price note">${r.price_note ? escapeHtml(r.price_note) : '<span class="nil">-</span>'}</td>
-        <td data-label="Source" class="src"${full ? ` title="${escapeHtml(full)}"` : ''}>${src ? escapeHtml(src) : '<span class="nil">-</span>'}</td>
-      </tr>`;
-    }).join('');
+    if (els.treatBody) {
+      els.treatBody.innerHTML = approved.map((r) => {
+        const idx = Array.isArray(r.source_ids) && r.source_ids.length ? Number(r.source_ids[0]) : null;
+        const unver = r.origin === 'web' || r.origin === 'ai';
+        let src = idx !== null && passages[idx] ? passages[idx].source : (Array.isArray(r.sources) && r.sources.length ? r.sources.join('; ') : null);
+        if (unver) src = `${r.origin === 'ai' ? 'AI general knowledge' : 'Web'} (unverified)${src && r.origin === 'web' ? ': ' + src : ''}`;
+        const full = src || '';
+        if (src) src = src.replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim();
+        if (src && src.length > 70) src = src.slice(0, 67).trim() + '...';
+        const brands = (r.brand_examples || []).length ? escapeHtml(r.brand_examples.join(', ')) : '<span class="nil">None listed</span>';
+        return `<tr>
+          <td data-label="Action" data-autodir>${escapeHtml(r.action || '-')}</td>
+          <td data-label="Active ingredient">${r.active_ingredient ? escapeHtml(r.active_ingredient) : '<span class="nil">Not specified</span>'}</td>
+          <td data-label="Dosage">${r.dosage ? escapeHtml(r.dosage) : chip('Follow the product label', 'chip-quiet')}</td>
+          <td data-label="Brands">${brands}</td>
+          <td data-label="Price note">${r.price_note ? escapeHtml(r.price_note) : '<span class="nil">-</span>'}</td>
+          <td data-label="Source" class="src"${full ? ` title="${escapeHtml(full)}"` : ''}>${src ? escapeHtml(src) : '<span class="nil">-</span>'}</td>
+        </tr>`;
+      }).join('');
+      applyAutoRtl(els.treatBody);
+    }
 
     const note = document.getElementById('treatNote');
     if (note) {
@@ -1010,14 +1024,15 @@
         ? 'Some options below come from the web or the AI\'s general knowledge and are NOT verified. Confirm the product and dose with an agriculture officer before using them.'
         : 'Every dose and brand below was found in a local source and checked by the Verifier agent.';
     }
-    const safety = (v.safety_lines && v.safety_lines.length ? v.safety_lines : DEFAULT_SAFETY);
-    els.safetyList.innerHTML = safety.map((s) => `<li>${icon('shield')}<span>${escapeHtml(s)}</span></li>`).join('');
-    applyAutoRtl(els.treatBody);
+    if (els.safetyList) {
+      const safety = (v.safety_lines && v.safety_lines.length ? v.safety_lines : DEFAULT_SAFETY);
+      els.safetyList.innerHTML = safety.map((s) => `<li>${icon('shield')}<span>${escapeHtml(s)}</span></li>`).join('');
+    }
   }
 
   function renderResult(res) {
     state.result = res;
-    els.demoBadge.hidden = !res.isDemo;
+    if (els.demoBadge) els.demoBadge.hidden = !res.isDemo;
     renderHeard(res.heard);
     renderMetrics(res);
     renderAlerts(res);
@@ -1036,6 +1051,7 @@
   }
 
   function renderUrdu(script) {
+    if (!els.urduText) return;
     const sents = splitSentences(script);
     if (!sents.length) {
       els.urduText.textContent = 'No advice text was returned.';
@@ -1052,18 +1068,22 @@
   }
 
   function setPlayIcon(playing) {
+    if (!els.playIcon || !els.playBtn) return;
     els.playIcon.querySelector('use').setAttribute('href', playing ? '#i-pause' : '#i-play');
     els.playBtn.setAttribute('aria-label', playing ? 'Pause advice' : 'Play advice');
   }
 
   function updateProgress() {
+    if (!els.audioEl) return;
     const a = els.audioEl;
     const dur = a.duration;
     const p = Number.isFinite(dur) && dur > 0 ? Math.min(1, a.currentTime / dur) : 0;
-    els.seek.value = String(Math.round(p * 1000));
-    els.seek.style.setProperty('--p', `${p * 100}%`);
-    els.curTime.textContent = formatTime(a.currentTime);
-    if (Number.isFinite(dur)) els.durTime.textContent = formatTime(dur);
+    if (els.seek) {
+      els.seek.value = String(Math.round(p * 1000));
+      els.seek.style.setProperty('--p', `${p * 100}%`);
+    }
+    if (els.curTime) els.curTime.textContent = formatTime(a.currentTime);
+    if (els.durTime && Number.isFinite(dur)) els.durTime.textContent = formatTime(dur);
 
     let idx = -1;
     if (p > 0 || !a.paused) {
@@ -1077,6 +1097,7 @@
   }
 
   function teardownPlayer() {
+    if (!els.audioEl) return;
     const a = els.audioEl;
     a.pause();
     a.removeAttribute('src');
@@ -1084,48 +1105,59 @@
     if (player.revoke && player.url) URL.revokeObjectURL(player.url);
     player.url = null; player.revoke = false; player.speedIdx = 0;
     a.playbackRate = 1;
-    els.speedBtn.textContent = '1x';
+    if (els.speedBtn) els.speedBtn.textContent = '1x';
     setPlayIcon(false);
     updateProgress();
-    els.durTime.textContent = '0:00';
+    if (els.durTime) els.durTime.textContent = '0:00';
   }
 
   function setupPlayer(res) {
     teardownPlayer();
     renderUrdu(res.advice.script_urdu || '');
-    els.urduSummary.textContent = res.advice.summary_english || '';
+    if (els.urduSummary) els.urduSummary.textContent = res.advice.summary_english || '';
 
     const audio = res.audio;
     const enabled = !!audio;
-    els.playBtn.disabled = !enabled;
-    els.seek.disabled = !enabled;
-    els.speedBtn.disabled = !enabled;
+    if (els.playBtn) els.playBtn.disabled = !enabled;
+    if (els.seek) els.seek.disabled = !enabled;
+    if (els.speedBtn) els.speedBtn.disabled = !enabled;
 
     if (audio) {
       player.url = audio.url;
       player.revoke = audio.revoke;
-      els.audioEl.src = audio.url;
-      els.audioEl.load();
-      els.downloadLink.hidden = audio.placeholder;
-      els.downloadLink.href = audio.url;
-      els.downloadLink.setAttribute('download', `kisaanai-advice.${audio.ext}`);
-      els.audioNote.hidden = !audio.placeholder;
-      els.audioNote.textContent = audio.placeholder
-        ? 'Sample mode plays silent placeholder audio so you can try the player and the sentence highlighting. With a backend connected, the Urdu voice reply plays here.'
-        : '';
+      if (els.audioEl) {
+        els.audioEl.src = audio.url;
+        els.audioEl.load();
+      }
+      if (els.downloadLink) {
+        els.downloadLink.hidden = audio.placeholder;
+        els.downloadLink.href = audio.url;
+        els.downloadLink.setAttribute('download', `kisaanai-advice.${audio.ext}`);
+      }
+      if (els.audioNote) {
+        els.audioNote.hidden = !audio.placeholder;
+        els.audioNote.textContent = audio.placeholder
+          ? 'Sample mode plays silent placeholder audio so you can try the player and sentence highlighting.'
+          : '';
+      }
     } else {
-      els.downloadLink.hidden = true;
-      els.audioNote.hidden = false;
-      els.audioNote.textContent = 'Audio is not available for this result. You can still read the advice below.';
+      if (els.downloadLink) els.downloadLink.hidden = true;
+      if (els.audioNote) {
+        els.audioNote.hidden = false;
+        els.audioNote.textContent = 'Audio is not available for this result. You can still read the advice below.';
+      }
     }
   }
 
   function bindPlayer() {
+    if (!els.audioEl) return;
     const a = els.audioEl;
-    els.playBtn.addEventListener('click', () => {
-      if (a.paused) a.play().catch(() => toast('The audio could not be played in this browser.', 'error'));
-      else a.pause();
-    });
+    if (els.playBtn) {
+      els.playBtn.addEventListener('click', () => {
+        if (a.paused) a.play().catch(() => toast('The audio could not be played in this browser.', 'error'));
+        else a.pause();
+      });
+    }
     a.addEventListener('play', () => setPlayIcon(true));
     a.addEventListener('pause', () => { setPlayIcon(false); updateProgress(); });
     a.addEventListener('ended', () => { setPlayIcon(false); a.currentTime = 0; updateProgress(); });
@@ -1134,31 +1166,38 @@
     a.addEventListener('durationchange', updateProgress);
     a.addEventListener('error', () => { if (a.getAttribute('src')) toast('The audio file could not be loaded.', 'error'); });
 
-    els.seek.addEventListener('input', () => {
-      if (Number.isFinite(a.duration)) a.currentTime = (Number(els.seek.value) / 1000) * a.duration;
-      updateProgress();
-    });
+    if (els.seek) {
+      els.seek.addEventListener('input', () => {
+        if (Number.isFinite(a.duration)) a.currentTime = (Number(els.seek.value) / 1000) * a.duration;
+        updateProgress();
+      });
+    }
 
-    els.speedBtn.addEventListener('click', () => {
-      player.speedIdx = (player.speedIdx + 1) % player.speeds.length;
-      const s = player.speeds[player.speedIdx];
-      a.playbackRate = s;
-      els.speedBtn.textContent = `${s}x`;
-    });
+    if (els.speedBtn) {
+      els.speedBtn.addEventListener('click', () => {
+        player.speedIdx = (player.speedIdx + 1) % player.speeds.length;
+        const s = player.speeds[player.speedIdx];
+        a.playbackRate = s;
+        els.speedBtn.textContent = `${s}x`;
+      });
+    }
 
-    els.urduText.addEventListener('click', (e) => {
-      const el = e.target.closest('.sent');
-      if (!el || els.playBtn.disabled || !Number.isFinite(a.duration)) return;
-      const i = Number(el.dataset.i);
-      a.currentTime = (i === 0 ? 0 : player.cum[i - 1]) * a.duration;
-      a.play().catch(() => {});
-    });
+    if (els.urduText) {
+      els.urduText.addEventListener('click', (e) => {
+        const el = e.target.closest('.sent');
+        if (!el || (els.playBtn && els.playBtn.disabled) || !Number.isFinite(a.duration)) return;
+        const i = Number(el.dataset.i);
+        a.currentTime = (i === 0 ? 0 : player.cum[i - 1]) * a.duration;
+        a.play().catch(() => {});
+      });
+    }
   }
 
   /* ------------------------------------------------------------------ *
    * Trace logs
    * ------------------------------------------------------------------ */
   function setCollapsible(el, open) {
+    if (!el) return;
     el.dataset.open = String(open);
     const inner = el.querySelector(':scope > .collapsible-inner');
     if (inner) inner.inert = !open;
@@ -1193,102 +1232,117 @@
   }
 
   function renderTrace(trace) {
-    els.traceCount.textContent = String(trace.length);
-    els.expandAll.textContent = 'Expand all';
+    if (els.traceCount) els.traceCount.textContent = String(trace.length);
+    if (els.expandAll) els.expandAll.textContent = 'Expand all';
 
     if (!trace.length) {
-      els.traceTotal.textContent = 'No run yet';
-      els.traceBar.innerHTML = '';
-      els.traceLegend.innerHTML = '';
-      els.traceList.innerHTML = '<li class="trace-empty muted">Each agent\'s input, output and timing will be listed here after a run.</li>';
+      if (els.traceTotal) els.traceTotal.textContent = 'No run yet';
+      if (els.traceBar) els.traceBar.innerHTML = '';
+      if (els.traceLegend) els.traceLegend.innerHTML = '';
+      if (els.traceList) els.traceList.innerHTML = '<li class="trace-empty muted">Each agent\'s input, output and timing will be listed here after a run.</li>';
       return;
     }
 
     const total = trace.reduce((s, t) => s + (Number(t.seconds) || 0), 0);
-    els.traceTotal.textContent = `${trace.length} steps in ${total.toFixed(1)} s`;
+    if (els.traceTotal) els.traceTotal.textContent = `${trace.length} steps in ${total.toFixed(1)} s`;
 
     const colorOf = (label) => { const i = agentIndex(label); return TRACE_COLORS[i >= 0 ? i : 0]; };
 
-    els.traceBar.innerHTML = trace.map((t) =>
-      `<span style="flex-grow:${Math.max(Number(t.seconds) || 0, 0.05)};background:${colorOf(t.agent)}" title="${escapeHtml(t.agent)}: ${(Number(t.seconds) || 0).toFixed(1)} s"></span>`).join('');
+    if (els.traceBar) {
+      els.traceBar.innerHTML = trace.map((t) =>
+        `<span style="flex-grow:${Math.max(Number(t.seconds) || 0, 0.05)};background:${colorOf(t.agent)}" title="${escapeHtml(t.agent)}: ${(Number(t.seconds) || 0).toFixed(1)} s"></span>`).join('');
+    }
 
-    els.traceLegend.innerHTML = trace.map((t) =>
-      `<li><i style="background:${colorOf(t.agent)}"></i>${escapeHtml(t.agent)} ${(Number(t.seconds) || 0).toFixed(1)} s</li>`).join('');
+    if (els.traceLegend) {
+      els.traceLegend.innerHTML = trace.map((t) =>
+        `<li><i style="background:${colorOf(t.agent)}"></i>${escapeHtml(t.agent)} ${(Number(t.seconds) || 0).toFixed(1)} s</li>`).join('');
+    }
 
-    els.traceList.innerHTML = trace.map((t, i) => {
-      const failed = !!(t.output && t.output.error);
-      return `
-      <li class="trace-item" data-open="false">
-        <button class="trace-item-head" type="button" aria-expanded="false" aria-controls="trace-body-${i}">
-          <span class="trace-dot" style="color:${colorOf(t.agent)};background:currentColor"></span>
-          <span class="trace-name">${escapeHtml(t.agent)}</span>
-          <span class="trace-sum">${escapeHtml(summarize(t.agent, t.output))}</span>
-          <span class="trace-sec">${(Number(t.seconds) || 0).toFixed(1)} s</span>
-          <span class="status-chip" data-status="${failed ? 'error' : 'ok'}">${failed ? 'error' : 'ok'}</span>
-          ${icon('chevron', 'chev')}
-        </button>
-        <div class="collapsible" id="trace-body-${i}" data-open="false">
-          <div class="collapsible-inner" inert>
-            <div><pre class="json" dir="ltr">${highlightJson(t.output)}</pre></div>
+    if (els.traceList) {
+      els.traceList.innerHTML = trace.map((t, i) => {
+        const failed = !!(t.output && t.output.error);
+        return `
+        <li class="trace-item" data-open="false">
+          <button class="trace-item-head" type="button" aria-expanded="false" aria-controls="trace-body-${i}">
+            <span class="trace-dot" style="color:${colorOf(t.agent)};background:currentColor"></span>
+            <span class="trace-name">${escapeHtml(t.agent)}</span>
+            <span class="trace-sum">${escapeHtml(summarize(t.agent, t.output))}</span>
+            <span class="trace-sec">${(Number(t.seconds) || 0).toFixed(1)} s</span>
+            <span class="status-chip" data-status="${failed ? 'error' : 'ok'}">${failed ? 'error' : 'ok'}</span>
+            ${icon('chevron', 'chev')}
+          </button>
+          <div class="collapsible" id="trace-body-${i}" data-open="false">
+            <div class="collapsible-inner" inert>
+              <div><pre class="json" dir="ltr">${highlightJson(t.output)}</pre></div>
+            </div>
           </div>
-        </div>
-      </li>`;
-    }).join('');
+        </li>`;
+      }).join('');
+    }
   }
 
   function bindTrace() {
-    setCollapsible(els.tracePanel, false);
+    if (els.tracePanel) setCollapsible(els.tracePanel, false);
 
-    els.traceToggle.addEventListener('click', () => {
-      const open = els.traceToggle.getAttribute('aria-expanded') !== 'true';
-      els.traceToggle.setAttribute('aria-expanded', String(open));
-      setCollapsible(els.tracePanel, open);
-    });
-
-    els.traceList.addEventListener('click', (e) => {
-      const head = e.target.closest('.trace-item-head');
-      if (!head) return;
-      const item = head.closest('.trace-item');
-      const open = item.dataset.open !== 'true';
-      item.dataset.open = String(open);
-      head.setAttribute('aria-expanded', String(open));
-      setCollapsible(item.querySelector('.collapsible'), open);
-    });
-
-    els.expandAll.addEventListener('click', () => {
-      const items = Array.from(els.traceList.querySelectorAll('.trace-item'));
-      if (!items.length) return;
-      const open = items.some((it) => it.dataset.open !== 'true');
-      items.forEach((it) => {
-        it.dataset.open = String(open);
-        it.querySelector('.trace-item-head').setAttribute('aria-expanded', String(open));
-        setCollapsible(it.querySelector('.collapsible'), open);
+    if (els.traceToggle) {
+      els.traceToggle.addEventListener('click', () => {
+        const open = els.traceToggle.getAttribute('aria-expanded') !== 'true';
+        els.traceToggle.setAttribute('aria-expanded', String(open));
+        setCollapsible(els.tracePanel, open);
       });
-      els.expandAll.textContent = open ? 'Collapse all' : 'Expand all';
-    });
+    }
 
-    els.copyTrace.addEventListener('click', async () => {
-      if (!state.result || !state.result.trace.length) { toast('There is no trace to copy yet. Run a diagnosis first.', 'info'); return; }
-      const text = JSON.stringify(state.result.trace, null, 2);
-      try {
-        await navigator.clipboard.writeText(text);
-        toast('Trace copied as JSON.', 'success', 2800);
-      } catch {
-        const ta = document.createElement('textarea');
-        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-        document.body.appendChild(ta); ta.select();
-        const ok = document.execCommand && document.execCommand('copy');
-        ta.remove();
-        toast(ok ? 'Trace copied as JSON.' : 'Copy failed. Select the text in a log entry and copy it manually.', ok ? 'success' : 'error', 3500);
-      }
-    });
+    if (els.traceList) {
+      els.traceList.addEventListener('click', (e) => {
+        const head = e.target.closest('.trace-item-head');
+        if (!head) return;
+        const item = head.closest('.trace-item');
+        const open = item.dataset.open !== 'true';
+        item.dataset.open = String(open);
+        head.setAttribute('aria-expanded', String(open));
+        setCollapsible(item.querySelector('.collapsible'), open);
+      });
+    }
+
+    if (els.expandAll) {
+      els.expandAll.addEventListener('click', () => {
+        if (!els.traceList) return;
+        const items = Array.from(els.traceList.querySelectorAll('.trace-item'));
+        if (!items.length) return;
+        const open = items.some((it) => it.dataset.open !== 'true');
+        items.forEach((it) => {
+          it.dataset.open = String(open);
+          it.querySelector('.trace-item-head').setAttribute('aria-expanded', String(open));
+          setCollapsible(it.querySelector('.collapsible'), open);
+        });
+        els.expandAll.textContent = open ? 'Collapse all' : 'Expand all';
+      });
+    }
+
+    if (els.copyTrace) {
+      els.copyTrace.addEventListener('click', async () => {
+        if (!state.result || !state.result.trace.length) { toast('There is no trace to copy yet. Run a diagnosis first.', 'info'); return; }
+        const text = JSON.stringify(state.result.trace, null, 2);
+        try {
+          await navigator.clipboard.writeText(text);
+          toast('Trace copied as JSON.', 'success', 2800);
+        } catch {
+          const ta = document.createElement('textarea');
+          ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          const ok = document.execCommand && document.execCommand('copy');
+          ta.remove();
+          toast(ok ? 'Trace copied as JSON.' : 'Copy failed.', ok ? 'success' : 'error', 3500);
+        }
+      });
+    }
   }
 
   /* ------------------------------------------------------------------ *
    * Run and reset
    * ------------------------------------------------------------------ */
   async function run() {
-    if (state.running || els.runBtn.disabled) return;
+    if (state.running || (els.runBtn && els.runBtn.disabled)) return;
     state.running = true;
     const live = !!state.apiUrl;
     const t0 = performance.now();
@@ -1296,13 +1350,15 @@
     setBusy(true);
     Stepper.reset();
     setView('running');
-    els.pipelineState.textContent = 'Agents are working';
-    els.runningText.textContent = live ? 'Sending your photo and voice note to the agents' : 'Running the sample pipeline';
+    if (els.pipelineState) els.pipelineState.textContent = 'Agents are working';
+    if (els.runningText) els.runningText.textContent = live ? 'Sending your photo and voice note to the agents' : 'Running the sample pipeline';
 
     const onStep = (i, status, secs) => {
       Stepper.indeterminate(false);
       Stepper.set(i, status, secs);
-      if (status === 'active') els.runningText.textContent = `${AGENTS[i].name} agent: ${AGENTS[i].role.toLowerCase()}`;
+      if (status === 'active' && els.runningText) {
+        els.runningText.textContent = `${AGENTS[i].name} agent: ${AGENTS[i].role.toLowerCase()}`;
+      }
     };
 
     try {
@@ -1314,22 +1370,22 @@
       setView('result');
       renderResult(res);
       Stepper.finalize(res.trace);
-      els.pipelineState.textContent = `Finished in ${((performance.now() - t0) / 1000).toFixed(1)} s`;
+      if (els.pipelineState) els.pipelineState.textContent = `Finished in ${((performance.now() - t0) / 1000).toFixed(1)} s`;
 
-      if (!state.traceAutoOpened) {
+      if (!state.traceAutoOpened && els.traceToggle) {
         state.traceAutoOpened = true;
         els.traceToggle.setAttribute('aria-expanded', 'true');
         setCollapsible(els.tracePanel, true);
       }
-      toast(res.isDemo ? 'Sample analysis complete. Connect a backend to run real diagnoses.' : 'Diagnosis complete.', 'success');
-      if (window.matchMedia('(max-width: 1079px)').matches) {
+      toast(res.isDemo ? 'Sample analysis complete.' : 'Diagnosis complete.', 'success');
+      if (window.matchMedia('(max-width: 1079px)').matches && els.viewResult) {
         els.viewResult.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
       }
     } catch (err) {
       console.error(err);
       Stepper.indeterminate(false);
       Stepper.error();
-      els.pipelineState.textContent = 'Stopped because of an error';
+      if (els.pipelineState) els.pipelineState.textContent = 'Stopped because of an error';
       setView(state.result ? 'result' : 'empty');
       toast(friendlyError(err), 'error', 8000);
     } finally {
@@ -1342,12 +1398,14 @@
     if (state.running) return;
     clearPhoto();
     clearAudio();
-    els.typedText.value = '';
+    if (els.typedText) {
+      els.typedText.value = '';
+      applyDir(els.typedText);
+    }
     state.text = '';
-    applyDir(els.typedText);
     selectPane('record');
-    els.recStatus.textContent = 'Tap the microphone and start speaking';
-    els.recTimer.textContent = '0:00';
+    if (els.recStatus) els.recStatus.textContent = 'Tap the microphone and start speaking';
+    if (els.recTimer) els.recTimer.textContent = '0:00';
 
     teardownPlayer();
     state.result = null;
@@ -1364,7 +1422,6 @@
   function init() {
     Stepper.build();
     initApiUrl();
-    bindSettings();
     bindPhoto();
     bindTabs();
     bindRecorder();
@@ -1372,9 +1429,9 @@
     bindPlayer();
     bindTrace();
 
-    state.district = els.districtSelect.value;
-    els.runBtn.addEventListener('click', run);
-    els.resetBtn.addEventListener('click', resetAll);
+    if (els.districtSelect) state.district = els.districtSelect.value;
+    if (els.runBtn) els.runBtn.addEventListener('click', run);
+    if (els.resetBtn) els.resetBtn.addEventListener('click', resetAll);
 
     applyAutoRtl();
     renderTrace([]);
