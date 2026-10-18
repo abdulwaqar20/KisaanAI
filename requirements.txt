@@ -1,7 +1,11 @@
 streamlit
+fastapi
+uvicorn
+python-multipart
 groq
-edge-tts
 requests
-scikit-learn
+edge-tts
 python-dotenv
+scikit-learn
+Pillow
 tavily-python
