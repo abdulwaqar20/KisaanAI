@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#020617">
+  <title>KisaanAI | Multi-Agent Crop Diagnostics</title>
+  <meta name="description" content="Upload a leaf photo and an Urdu voice note. Five AI agents diagnose the crop, verify safe treatment and reply in spoken Urdu.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Nastaliq+Urdu:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-8 5-14 15-14 0 10-6 15-14 15"/><path d="M5 19c3-5 6-8 10-10"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4V8Z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+      <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12m0 0 5-5m-5 5-5-5M4 20h16"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 3 19h18L12 4Z"/><path d="M12 10v4M12 17h.01"/></symbol>
+      <symbol id="i-rain" viewBox="0 0 24 24"><path d="M7 15a4 4 0 0 1 .5-8A5 5 0 0 1 17 8a3.5 3.5 0 0 1 0 7H7Z"/><path d="M9 18l-1 2M13 18l-1 2M17 18l-1 2"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+      <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+      <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 10v4"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Z"/><path d="M8 7h7"/></symbol>
+      <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10H4Z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2 6M20 5v6h-6"/></symbol>
+      <symbol id="i-pathogen" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></symbol>
+      <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 17a8 8 0 1 1 16 0"/><path d="m12 17 4-5"/></symbol>
+      <symbol id="i-thermo" viewBox="0 0 24 24"><path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0Z"/></symbol>
+      <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3M3 12h7"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="backdrop" aria-hidden="true"></div>
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#" aria-label="KisaanAI home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="i"><use href="#i-leaf"/></svg>
+        </span>
+        <span class="brand-name">KisaanAI</span>
+      </a>
+
+      <div class="topbar-actions">
+        <span class="mode-pill" id="modePill" data-mode="demo">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="modeLabel">Demo mode</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="page-head">
+      <h1>Crop diagnosis</h1>
+      <p>Add a leaf photo and a voice note in Urdu. Five agents diagnose the problem, check the treatment against local sources and answer in spoken Urdu.</p>
+    </div>
+
+    <div class="grid">
+
+      <!-- LEFT: inputs -->
+      <aside class="panel panel-inputs" aria-label="Inputs">
+
+        <!-- Leaf photo -->
+        <article class="card" id="cardPhoto">
+          <header class="card-head">
+            <span class="card-ico"><svg class="i" aria-hidden="true"><use href="#i-leaf"/></svg></span>
+            <div>
+              <h2>Leaf photo</h2>
+              <p>JPG, PNG or WebP, up to 10 MB. Show the affected leaf up close in daylight.</p>
+            </div>
+          </header>
+
+          <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Add a leaf photo. Press Enter to browse files.">
+            <div class="dz-idle" id="dzIdle">
+              <span class="dz-icon"><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg></span>
+              <strong>Drop a leaf photo here</strong>
+              <span class="muted">or paste an image from your clipboard</span>
+            </div>
+            <div class="dz-preview" id="dzPreview" hidden>
+              <img id="photoPreview" alt="Preview of the uploaded leaf photo">
+              <div class="dz-meta">
+                <span class="dz-name" id="photoName"></span>
+                <span class="dz-size muted" id="photoSize"></span>
+              </div>
+              <button class="dz-remove" id="photoRemove" type="button" aria-label="Remove photo">
+                <svg class="i" aria-hidden="true"><use href="#i-x"/></svg>
+              </button>
+            </div>
+          </div>
+          <input type="file" id="photoInput" accept="image/png,image/jpeg,image/webp" hidden>
+          <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+
+          <div class="btn-row">
+            <button class="btn btn-ghost" id="browseBtn" type="button">
+              <svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span>Choose file</span>
+            </button>
+            <button class="btn btn-ghost" id="cameraBtn" type="button">
+              <svg class="i" aria-hidden="true"><use href="#i-camera"/></svg><span>Use camera</span>
+            </button>
+          </div>
+        </article>
+
+        <!-- Voice note -->
+        <article class="card" id="cardVoice">
+          <header class="card-head">
+            <span class="card-ico"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></span>
+            <div>
+              <h2>Voice note</h2>
+              <p>Describe what you see in Urdu: which crop, what the leaves look like, for how many days.</p>
+            </div>
+          </header>
+
+          <div class="segmented" role="tablist" aria-label="Voice input method" id="voiceTabs">
+            <button role="tab" type="button" id="tab-record" aria-controls="pane-record" aria-selected="true" data-pane="record">
+              <svg class="i" aria-hidden="true"><use href="#i-mic"/></svg><span>Record</span>
+            </button>
+            <button role="tab" type="button" id="tab-upload" aria-controls="pane-upload" aria-selected="false" tabindex="-1" data-pane="upload">
+              <svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span>Upload</span>
+            </button>
+            <button role="tab" type="button" id="tab-type" aria-controls="pane-type" aria-selected="false" tabindex="-1" data-pane="type">
+              <svg class="i" aria-hidden="true"><use href="#i-keyboard"/></svg><span>Type</span>
+            </button>
+          </div>
+
+          <!-- Record -->
+          <div class="pane" id="pane-record" role="tabpanel" aria-labelledby="tab-record">
+            <div class="recorder" id="recorder">
+              <button class="rec-btn" id="recBtn" type="button" aria-label="Start recording">
+                <svg class="i i-fill" aria-hidden="true" id="recIcon"><use href="#i-mic"/></svg>
+              </button>
+              <div class="rec-body">
+                <canvas id="waveCanvas" class="wave" aria-hidden="true"></canvas>
+                <div class="rec-meta">
+                  <span class="rec-timer" id="recTimer">0:00</span>
+                  <span class="rec-status muted" id="recStatus" role="status">Tap the microphone and start speaking</span>
+                </div>
+              </div>
+            </div>
+            <div class="rec-playback" id="recPlaybackWrap" hidden>
+              <audio id="recPlayback" controls preload="metadata"></audio>
+              <button class="btn btn-text" id="recClear" type="button">Delete recording</button>
+            </div>
+          </div>
+
+          <!-- Upload -->
+          <div class="pane" id="pane-upload" role="tabpanel" aria-labelledby="tab-upload" hidden>
+            <div class="audio-drop" id="audioDrop" tabindex="0" role="button" aria-label="Choose an audio file">
+              <svg class="i" aria-hidden="true"><use href="#i-upload"/></svg>
+              <div>
+                <strong id="audioFileTitle">Drop an audio file or choose one</strong>
+                <span class="muted" id="audioFileMeta">MP3, WAV, M4A, OGG or WebM, up to 20 MB</span>
+              </div>
+            </div>
+            <input type="file" id="audioInput" accept="audio/*" hidden>
+            <div class="rec-playback" id="uploadPlaybackWrap" hidden>
+              <audio id="uploadPlayback" controls preload="metadata"></audio>
+              <button class="btn btn-text" id="audioClear" type="button">Remove file</button>
+            </div>
+          </div>
+
+          <!-- Type -->
+          <div class="pane" id="pane-type" role="tabpanel" aria-labelledby="tab-type" hidden>
+            <label class="field">
+              <span class="field-label">Describe the problem in Urdu or English</span>
+              <textarea id="typedText" rows="4" dir="auto" data-autodir placeholder="مثال: میری کپاس کے پتے اوپر کی طرف مڑ رہے ہیں"></textarea>
+            </label>
+          </div>
+
+          <p class="source-note" id="voiceSource" hidden></p>
+        </article>
+
+        <!-- District -->
+        <article class="card" id="cardDistrict">
+          <header class="card-head">
+            <span class="card-ico"><svg class="i" aria-hidden="true"><use href="#i-pin"/></svg></span>
+            <div>
+              <h2>District</h2>
+              <p>Used for the spray-weather check at your farm.</p>
+            </div>
+          </header>
+          <label class="field">
+            <span class="sr-only">District</span>
+            <span class="select-wrap">
+              <select id="districtSelect">
+                <optgroup label="Punjab">
+                  <option>Lahore</option><option>Faisalabad</option><option>Multan</option>
+                  <option>Bahawalpur</option><option>Sargodha</option><option>Sahiwal</option>
+                </optgroup>
+                <optgroup label="Sindh">
+                  <option>Hyderabad</option><option>Sukkur</option><option>Larkana</option>
+                </optgroup>
+                <optgroup label="Khyber Pakhtunkhwa">
+                  <option>Peshawar</option><option>Mardan</option>
+                </optgroup>
+                <optgroup label="Balochistan">
+                  <option>Quetta</option>
+                </optgroup>
+              </select>
+              <svg class="i select-chev" aria-hidden="true"><use href="#i-chevron"/></svg>
+            </span>
+          </label>
+        </article>
+
+        <!-- Run -->
+        <div class="run-block">
+          <ul class="checklist" aria-label="What is needed to start">
+            <li id="reqPhoto"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span>Leaf photo</span></li>
+            <li id="reqVoice"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span>Voice note or typed description</span></li>
+          </ul>
+          <button class="btn btn-primary btn-lg" id="runBtn" type="button" disabled>
+            <svg class="i" aria-hidden="true"><use href="#i-leaf"/></svg>
+            <span id="runBtnLabel">Diagnose crop</span>
+          </button>
+          <button class="btn btn-text" id="resetBtn" type="button">Start over</button>
+        </div>
+      </aside>
+
+      <!-- RIGHT: output -->
+      <section class="panel panel-output" aria-label="Results" aria-live="polite">
+
+        <!-- Agent pipeline (the signal line) -->
+        <div class="pipeline card-flat" id="pipelineCard">
+          <div class="pipeline-head">
+            <h2>Agent pipeline</h2>
+            <span class="pipeline-state muted" id="pipelineState">Waiting for input</span>
+          </div>
+          <ol class="stepper" id="stepper"></ol>
+        </div>
+
+        <!-- Empty -->
+        <div class="empty" id="viewEmpty">
+          <div class="empty-art" aria-hidden="true">
+            <svg viewBox="0 0 120 120" fill="none">
+              <circle cx="60" cy="60" r="52" stroke="currentColor" stroke-opacity=".18" stroke-width="1.5"/>
+              <circle cx="60" cy="60" r="34" stroke="currentColor" stroke-opacity=".28" stroke-width="1.5" stroke-dasharray="3 5"/>
+              <path d="M38 82c0-22 14-40 44-40 0 28-17 42-40 42" stroke="#10b981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M38 82c8-14 17-23 29-30" stroke="#10b981" stroke-width="2.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3>No diagnosis yet</h3>
+          <p class="muted">Add a leaf photo and a voice note on the left, then choose Diagnose crop. Crop, disease, confidence, a verified treatment plan and Urdu audio advice will appear here.</p>
+        </div>
+
+        <!-- Running -->
+        <div class="running" id="viewRunning" hidden>
+          <div class="skeleton-grid" aria-hidden="true">
+            <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+          </div>
+          <p class="running-text" id="runningText">Starting agents</p>
+        </div>
+
+        <!-- Result -->
+        <div class="result" id="viewResult" hidden>
+
+          <div class="result-head">
+            <h2>Diagnosis results</h2>
+            <span class="badge badge-demo" id="demoBadge" hidden>Sample data</span>
+          </div>
+
+          <!-- What the Listener heard -->
+          <article class="card card-heard" id="cardHeard">
+            <header class="card-head card-head-sm">
+              <span class="card-ico card-ico-blue"><svg class="i" aria-hidden="true"><use href="#i-wave"/></svg></span>
+              <div><h3>What the Listener heard</h3></div>
+            </header>
+            <p class="transcript" id="heardTranscript" data-autodir></p>
+            <div class="chips" id="heardChips"></div>
+          </article>
+
+          <!-- Metrics -->
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-top"><span class="metric-ico"><svg class="i" aria-hidden="true"><use href="#i-leaf"/></svg></span><span class="metric-label">Crop</span></div>
+              <div class="metric-value" id="mCrop">-</div>
+              <div class="metric-sub" id="mCropSub"></div>
+            </div>
+            <div class="metric">
+              <div class="metric-top"><span class="metric-ico"><svg class="i" aria-hidden="true"><use href="#i-pathogen"/></svg></span><span class="metric-label">Disease</span></div>
+              <div class="metric-value" id="mDisease">-</div>
+              <div class="metric-sub" id="mDiseaseSub"></div>
+            </div>
+            <div class="metric metric-conf">
+              <div class="metric-top"><span class="metric-ico"><svg class="i" aria-hidden="true"><use href="#i-gauge"/></svg></span><span class="metric-label">Confidence index</span></div>
+              <div class="metric-value"><span id="mConfValue">0</span><span class="unit">%</span></div>
+              <div class="bar" id="mConfBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Confidence index">
+                <span class="bar-fill" id="mConfFill"></span>
+                <i class="bar-mark" title="60% confidence threshold"></i>
+              </div>
+              <div class="metric-sub" id="mConfSub">Treatment is shown above 60%</div>
+            </div>
+            <div class="metric">
+              <div class="metric-top"><span class="metric-ico"><svg class="i" aria-hidden="true"><use href="#i-alert"/></svg></span><span class="metric-label">Severity</span></div>
+              <div class="metric-value"><span class="sev" id="mSeverity" data-level="unknown">-</span></div>
+              <div class="metric-sub" id="mSeveritySub"></div>
+            </div>
+          </div>
+
+          <!-- Alerts -->
+          <div class="alert alert-amber" id="followupAlert" hidden role="alert">
+            <svg class="i" aria-hidden="true"><use href="#i-info"/></svg>
+            <div>
+              <strong>The agents are not sure yet</strong>
+              <p id="followupText"></p>
+            </div>
+          </div>
+
+          <div class="alert alert-blue" id="sprayAlert" hidden>
+            <svg class="i" aria-hidden="true"><use href="#i-rain"/></svg>
+            <div>
+              <strong id="sprayTitle">Spray conditions</strong>
+              <p id="sprayText"></p>
+              <div class="chips chips-weather" id="weatherChips"></div>
+            </div>
+          </div>
+
+          <!-- Treatment -->
+          <article class="card card-wide" id="cardTreat">
+            <header class="card-head">
+              <span class="card-ico"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg></span>
+              <div>
+                <h2>Treatment plan</h2>
+                <p id="treatNote">Every dose and brand below was found in a local source and checked by the Verifier agent.</p>
+              </div>
+              <span class="badge badge-blocked" id="blockedBadge" hidden></span>
+            </header>
+
+            <div class="table-wrap" id="treatWrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Action</th>
+                    <th scope="col">Active ingredient</th>
+                    <th scope="col">Dosage</th>
+                    <th scope="col">Brands</th>
+                    <th scope="col">Price note</th>
+                    <th scope="col">Source</th>
+                  </tr>
+                </thead>
+                <tbody id="treatBody"></tbody>
+              </table>
+            </div>
+            <div class="table-empty" id="treatEmpty" hidden>
+              <svg class="i" aria-hidden="true"><use href="#i-info"/></svg>
+              <p>No verified recommendation is available for this case. Show the plant to your local agriculture officer before spraying anything.</p>
+            </div>
+
+            <ul class="safety" id="safetyList" aria-label="Safety rules"></ul>
+          </article>
+
+          <!-- Audio console -->
+          <article class="card card-console" id="audioConsole" dir="rtl">
+            <header class="console-head">
+              <div class="console-title">
+                <span class="card-ico card-ico-blue"><svg class="i" aria-hidden="true"><use href="#i-speaker"/></svg></span>
+                <div>
+                  <h2 lang="ur" class="urdu-title">اردو مشورہ</h2>
+                  <p class="muted" dir="ltr">Urdu audio advice</p>
+                </div>
+              </div>
+              <a class="btn btn-ghost btn-sm" id="downloadLink" href="#" download="kisaanai-advice" hidden dir="ltr">
+                <svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span>Download</span>
+              </a>
+            </header>
+
+            <div class="player" id="player">
+              <button class="play-btn" id="playBtn" type="button" aria-label="Play advice" disabled>
+                <svg class="i i-fill" aria-hidden="true" id="playIcon"><use href="#i-play"/></svg>
+              </button>
+              <div class="player-track">
+                <input type="range" id="seek" class="seek" min="0" max="1000" value="0" step="1" aria-label="Seek" disabled>
+                <div class="player-times" dir="ltr">
+                  <span id="curTime">0:00</span>
+                  <span id="durTime">0:00</span>
+                </div>
+              </div>
+              <button class="speed-btn" id="speedBtn" type="button" aria-label="Playback speed" dir="ltr" disabled>1x</button>
+            </div>
+            <audio id="audioEl" preload="metadata"></audio>
+            <p class="muted audio-note" id="audioNote" dir="ltr" hidden></p>
+
+            <div class="urdu-block" id="urduBlock">
+              <p class="urdu-text" id="urduText" lang="ur" dir="rtl"></p>
+            </div>
+            <p class="summary" id="urduSummary" dir="ltr"></p>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <!-- Trace -->
+    <section class="trace" id="traceSection" aria-label="Agent activity trace logs">
+      <button class="trace-toggle" id="traceToggle" type="button" aria-expanded="false" aria-controls="tracePanel">
+        <span class="trace-toggle-main">
+          <svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>
+          <span class="trace-title">Agent activity trace logs</span>
+          <span class="badge badge-count" id="traceCount">0</span>
+        </span>
+        <span class="trace-toggle-side">
+          <span class="muted" id="traceTotal">No run yet</span>
+          <svg class="i chev" aria-hidden="true"><use href="#i-chevron"/></svg>
+        </span>
+      </button>
+
+      <div class="collapsible" id="tracePanel" data-open="false">
+        <div class="collapsible-inner">
+          <div class="trace-body">
+            <div class="trace-tools">
+              <div class="trace-bar-wrap">
+                <div class="trace-bar" id="traceBar" aria-hidden="true"></div>
+                <ul class="trace-legend" id="traceLegend"></ul>
+              </div>
+              <div class="trace-buttons">
+                <button class="btn btn-ghost btn-sm" id="expandAll" type="button">Expand all</button>
+                <button class="btn btn-ghost btn-sm" id="copyTrace" type="button">
+                  <svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy as JSON</span>
+                </button>
+              </div>
+            </div>
+            <ol class="trace-list" id="traceList">
+              <li class="trace-empty muted">Each agent's input, output and timing will be listed here after a run.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>KisaanAI gives guidance only and does not replace an agriculture officer. Always follow the dose printed on the product label.</p>
+    <p class="muted">Powered by Groq (Whisper, Qwen, GPT-OSS), Edge TTS and Open-Meteo.</p>
+  </footer>
+
+  <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>

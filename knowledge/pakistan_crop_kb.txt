@@ -1,0 +1,96 @@
+SOURCE: Pakistan Agricultural Research Council (PARC) National Disease Registry & Federal Pesticide Regulation Guidelines 2026
+ALIAS: Angular Leaf Spot = Bacterial Leaf Blight
+ALIAS: Bacterial Blight = Bacterial Leaf Blight
+ALIAS: Black Arm = Bacterial Leaf Blight
+ALIAS: Cotton Leaf Curl Disease = Leaf Curl Virus
+ALIAS: CLCuV = Leaf Curl Virus
+ALIAS: Brown Rust = Leaf Rust
+ALIAS: Stripe Rust = Yellow Rust
+ALIAS: Citrus Bacterial Canker = Citrus Canker
+URDU_NAME: Target Spot = ٹارگٹ سپاٹ پتے کے دھبے
+URDU_NAME: Ascochyta Blight = کپاس کا جھلسائو
+URDU_NAME: Bacterial Leaf Blight = کپاس کا بیکٹیریل جھلسائو
+URDU_NAME: Leaf Curl Virus = کپاس کا پتا مروڑ وائرس
+URDU_NAME: Rice Blast = چاول کا جھلسائو / بلاسٹ
+URDU_NAME: Brown Leaf Spot = چاول کے پتے کے بھورے دھبے
+URDU_NAME: Stem Rot = چاول کے تنے کا سڑنا
+URDU_NAME: Leaf Rust = گندم کی براؤن کنگی / رتی
+URDU_NAME: Yellow Rust = گندم کی پیلی کنگی
+URDU_NAME: Powdery Mildew = گندم کی سفوفی پھپھوندی
+URDU_NAME: Early Blight = اگیتا جھلسائو
+URDU_NAME: Late Blight = پچھیتا جھلسائو
+URDU_NAME: Tomato Leaf Curl = ٹماٹر کا پتا مروڑ وائرس
+URDU_NAME: Citrus Canker = لیموں کا کینکر / ناسور
+URDU_NAME: Citrus Scab = لیموں کی کھرنڈ بیماری
+URDU_NAME: Mango Anthracnose = آم کا جھلسائو / اینتھراکنوز
+URDU_NAME: Mango Powdery Mildew = آم کی سفوفی پھپھوندی
+URDU_NAME: Red Rot = گنے کا سرخ سڑنا
+URDU_NAME: Black Scurf = آلو کا کالا دھبہ
+URDU_NAME: Chickpea Ascochyta Blight = چنے کا جھلسائو / اسکوچائٹا
+
+# --- COTTON DISEASES ---
+# CROP: COTTON | DISEASE: Target Spot
+Cotton Target Spot disease features prominent concentric target-like rings with brown margins on leaf tissue. Approved Chemical Control Strategy: Active Ingredient: Pyraclostrobin + Fluxapyroxad (Brand Example: Priaxor 300SC by BASF Pakistan). Dosage: 200 ml per acre dissolved in 100 liters of clean water. Price Note: Premium tier systemic control for cotton target spot.
+
+# CROP: COTTON | DISEASE: Ascochyta Blight
+Cotton Ascochyta Blight disease displays ash-grey lesions wrapped in very distinctive dark purplish outer borders on young cotton leaves. Approved Chemical Control Strategy: Active Ingredient: Thiophanate-Methyl (Brand Example: Topsin-M 70WP by Japan Agro Pakistan). Dosage: 400 grams per acre. Price Note: Highly affordable broad-spectrum curative treatment for cotton blight.
+
+# CROP: COTTON | DISEASE: Bacterial Leaf Blight
+Cotton Bacterial Leaf Blight disease manifests as water-soaked angular spots on leaves that turn dark brown or black over time. Approved Chemical Control Strategy: Active Ingredient: Copper Oxychloride + Kasugamycin (Brand Example: Kanub 50WP). Dosage: 250 grams per acre. Price Note: Effective bacterial shield for cotton fields.
+
+# CROP: COTTON | DISEASE: Leaf Curl Virus
+Cotton Leaf Curl Virus disease causes upward or downward curling of cotton leaves with thickening of veins and small leaf-like enations on the underside. Approved Chemical Control Strategy: Active Ingredient: Thiamethoxam (Brand Example: Actara 25WG by Syngenta Pakistan). Dosage: 24 grams per acre to eliminate whitefly vectors. Price Note: Standard premium whitefly vector mitigation for cotton crops.
+
+# --- RICE DISEASES ---
+# CROP: RICE | DISEASE: Rice Blast
+Rice Blast disease forms spindle-shaped or diamond-shaped lesions with grayish centers and dark reddish borders on rice crop leaves. Approved Chemical Control Strategy: Active Ingredient: Tricyclazole (Brand Example: Beam 75WP by Dow AgroSciences). Dosage: 120 grams per acre. Price Note: Economical protective fungicide for rice blast control.
+
+# CROP: RICE | DISEASE: Brown Leaf Spot
+Rice Brown Leaf Spot disease produces small, oval, relatively uniform dark brown lesions evenly distributed across the rice plant leaf blades. Approved Chemical Control Strategy: Active Ingredient: Mancozeb (Brand Example: Dithane M-45). Dosage: 500 grams per acre. Price Note: Affordable traditional multi-site protective choice for rice crop varieties.
+
+# CROP: RICE | DISEASE: Stem Rot
+Rice Stem Rot disease triggers irregular black lesions on outer leaf sheaths near the water line, causing the rice stalks to rot and collapse. Approved Chemical Control Strategy: Active Ingredient: Hexaconazole (Brand Example: Anvil 5SC). Dosage: 400 ml per acre. Price Note: Systemic azole solution targeting rice stem fungal decay.
+
+# --- WHEAT DISEASES ---
+# CROP: WHEAT | DISEASE: Leaf Rust
+Wheat Leaf Rust disease shows bright orange-brown pustules scattering across the wheat plant canopy during spring humid windows. Approved Chemical Control Strategy: Active Ingredient: Tebuconazole (Brand Example: Folicur 250EC by Bayer CropScience Pakistan). Dosage: 200 ml per acre. Price Note: Trusted broad-spectrum curative treatment for wheat leaf rust.
+
+# CROP: WHEAT | DISEASE: Yellow Rust
+Wheat Yellow Rust disease forms distinct linear stripes of bright yellow pustules along the veins of wheat plant foliage during cool windows. Approved Chemical Control Strategy: Active Ingredient: Propiconazole (Brand Example: Tilt 250EC by Syngenta Pakistan). Dosage: 200 ml per acre. Price Note: High-performing systemic cure for wheat stripe rust.
+
+# CROP: WHEAT | DISEASE: Powdery Mildew
+Wheat Powdery Mildew disease displays patches of white, fluffy, powdery fungal growth covering the upper surface of wheat leaf tissue. Approved Chemical Control Strategy: Active Ingredient: Flutriafol (Brand Example: Impact 125SC). Dosage: 200 ml per acre. Price Note: Broad-spectrum protective triazole targeting wheat mildew cycles.
+
+# --- TOMATO DISEASES ---
+# CROP: TOMATO | DISEASE: Early Blight
+Tomato Early Blight disease creates dark brown leathery spots with distinct target-board concentric ridges starting on older tomato plant foliage. Approved Chemical Control Strategy: Active Ingredient: Copper Oxychloride (Brand Example: Cobox 50WP). Dosage: 500 grams per acre. Price Note: Cost-effective traditional protective organic copper agent for tomato blight.
+
+# CROP: TOMATO | DISEASE: Late Blight
+Tomato Late Blight disease causes large, irregular water-soaked dark lesions on tomato leaves that quickly turn brown and rot under wet weather conditions. Approved Chemical Control Strategy: Active Ingredient: Cymoxanil + Mancozeb (Brand Example: Curzate M8 by Corteva Pakistan). Dosage: 250 grams per acre. Price Note: Rapid penetration preventive mixture for tomato late blight.
+
+# CROP: TOMATO | DISEASE: Tomato Leaf Curl
+Tomato Tomato Leaf Curl disease displays severe stunting of the tomato plant along with yellowing and dramatic upward rolling of young leaf margins. Approved Chemical Control Strategy: Active Ingredient: Acetamiprid (Brand Example: Mospilan 20SP). Dosage: 150 grams per acre to destroy whitefly vectors. Price Note: Effective vector system response for tomato leaf protection.
+
+# --- CITRUS DISEASES ---
+# CROP: CITRUS | DISEASE: Citrus Canker
+Citrus Citrus Canker disease displays raised, corky, rough brown lesions on leaves and fruits, always wrapped in a bright yellow-chlorotic halo. Approved Chemical Control Strategy: Active Ingredient: Copper Hydroxide (Brand Example: Kocide 2000DF by Certis Pakistan). Dosage: 250 grams per acre dissolved in 100 liters of water. Price Note: Mid-tier standard premium protective copper shield for citrus canker.
+
+# CROP: CITRUS | DISEASE: Citrus Scab
+Citrus Citrus Scab disease produces corky, raised pustules or scab lesions on leaves, twigs, and fruit which become tan to grey over time. Approved Chemical Control Strategy: Active Ingredient: Benomyl (Brand Example: Benlate 50WP). Dosage: 200 grams per acre. Price Note: Systemic fungicide targeting structural scab cells in citrus.
+
+# --- MANGO DISEASES ---
+# CROP: MANGO | DISEASE: Mango Anthracnose
+Mango Mango Anthracnose disease manifests as irregular, dark brown to black necrotic tear-stain spots spreading along the mango leaf margins and fruits. Approved Chemical Control Strategy: Active Ingredient: Azoxystrobin + Difenoconazole (Brand Example: Amistar Top by Syngenta Pakistan). Dosage: 200 ml per acre. Price Note: Highly effective systemic curative option for mango anthracnose.
+
+# CROP: MANGO | DISEASE: Mango Powdery Mildew
+Mango Mango Powdery Mildew disease displays a powdery whitish fungal growth on leaves, flowers, and young fruits causing severe blossom drop. Approved Chemical Control Strategy: Active Ingredient: Dinocap (Brand Example: Karathane). Dosage: 150 ml per acre dissolved in water. Price Note: Specific target curative control for mango powdery mildew outbreaks.
+
+# --- OTHER REGIONAL CASH CROPS ---
+# CROP: SUGARCANE | DISEASE: Red Rot
+Sugarcane Red Rot disease triggers severe internal reddening of the pith with distinctive white patches along the stalk internodes. Approved Chemical Control Strategy: Active Ingredient: Thiophanate-Methyl (Brand Example: Topsin-M 70WP by Japan Agro Pakistan). Dosage: 400 grams per acre dissolved in clean water. Price Note: Safe and approved broad-spectrum systemic fungicide for sugarcane red rot control.
+
+# CROP: POTATO | DISEASE: Black Scurf
+Potato Black Scurf disease forms hard, black or dark brown irregular fungal crusts (sclerotia) that tightly stick to the potato tuber surfaces. Approved Chemical Control Strategy: Active Ingredient: Flutolanil (Brand Example: Moncut 25WP). Dosage: 200 grams per acre applied at seed piece treatment phase. Price Note: Targeted protection against potato black scurf fungal strains.
+
+# CROP: CHICKPEA | DISEASE: Ascochyta blight
+Chickpea Ascochyta blight produces brown circular lesions with dark borders and concentric rings on leaves and pods. Approved Chemical Control Strategy: Active Ingredient: Chlorothalonil or Mancozeb (Brand Example: Bravo 720 / Dithane M-45). Dosage: 500 grams per acre. Price Note: Effective foliar protective fungicide for chickpea blight.

@@ -1,0 +1,27 @@
+{
+  "note": "Official Registry of Banned and Prohibited Pesticides under DPP S.R.O Notifications and Provincial Agriculture Regulations Pakistan.",
+  "banned": [
+    "ddt", 
+    "endosulfan", 
+    "aldrin", 
+    "dieldrin", 
+    "endrin", 
+    "chlordane", 
+    "heptachlor", 
+    "lindane", 
+    "hexachlorobenzene", 
+    "mirex", 
+    "toxaphene",
+    "monocrotophos",
+    "methamidophos",
+    "paraquat",
+    "carbofuran",
+    "chlorpyrifos",
+    "acephate",
+    "buprofezin",
+    "carbendazim",
+    "phorate",
+    "triazophos",
+    "imidacloprid"
+  ]
+}

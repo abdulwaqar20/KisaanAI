@@ -1,0 +1,7 @@
+streamlit
+groq
+edge-tts
+requests
+scikit-learn
+python-dotenv
+tavily-python
