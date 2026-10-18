@@ -222,20 +222,29 @@
   }
 
   function bindSettings() {
-    els.settingsBtn.addEventListener('click', () => {
-      els.apiUrlInput.value = state.apiUrl;
-      els.settingsDialog.returnValue = '';
-      els.settingsDialog.showModal();
-      els.apiUrlInput.focus();
-    });
-    els.settingsDialog.addEventListener('close', () => {
-      if (els.settingsDialog.returnValue !== 'save') return;
-      state.apiUrl = els.apiUrlInput.value.trim().replace(/\/+$/, '');
-      storage.set(CONFIG.STORAGE_KEY, state.apiUrl);
-      updateMode();
-      toast(state.apiUrl ? 'Backend saved. Diagnoses now run for real.' : 'Backend cleared. Sample data will be shown.', 'success');
-    });
+    // If the control trigger elements are completely omitted from the HTML node layout tree templates, bypass
+    if (els.settingsBtn && els.apiUrlInput && els.settingsDialog) {
+      els.settingsBtn.addEventListener('click', () => {
+        els.apiUrlInput.value = state.apiUrl;
+        els.settingsDialog.returnValue = '';
+        els.settingsDialog.showModal();
+        els.apiUrlInput.focus();
+      });
+    }
+    
+    if (els.settingsDialog) {
+      els.settingsDialog.addEventListener('close', () => {
+        if (els.settingsDialog.returnValue !== 'save') return;
+        if (els.apiUrlInput) {
+          state.apiUrl = els.apiUrlInput.value.trim().replace(/\/+$/, '');
+          storage.set(CONFIG.STORAGE_KEY, state.apiUrl);
+          updateMode();
+          toast(state.apiUrl ? 'Backend saved. Diagnoses now run for real.' : 'Backend cleared. Sample data will be shown.', 'success');
+        }
+      });
+    }
   }
+
 
   /* ------------------------------------------------------------------ *
    * Drag and drop helper
