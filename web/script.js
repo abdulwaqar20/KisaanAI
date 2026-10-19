@@ -1,30 +1,5 @@
 /* ==========================================================================
-   KisaanAI Pro - script.js
-   Vanilla JavaScript, no dependencies.
-
-   BACKEND CONTRACT
-   -------------------------------------------------------------------
-   POST {API_URL}/diagnose        multipart/form-data
-       image       leaf photo file                (required)
-       audio       voice note file                (optional if typed_text is sent)
-       typed_text  typed description              (optional)
-       district    e.g. "Lahore"                  (required)
-
-   Response: application/json  (or application/x-ndjson for live progress)
-       {
-         "heard":     { transcript, crop, symptoms[], duration_days, district, urgency, question },
-         "diagnosis": { crop, disease, confidence (0..1), severity, visual_evidence[],
-                        alternatives[], needs_follow_up, follow_up_question },
-         "research":  { passages: [ { source, text, score } ] },
-         "verified":  { approved: [ { action, active_ingredient, dosage, brand_examples[],
-                                      price_note, source_ids[] } ],
-                        rejected: [ { index, reason } ],
-                        spray_warning, safety_lines[], weather: { ok, rain_prob_today,
-                        rain_prob_tomorrow, max_temp_c, max_wind_kmh } },
-         "advice":    { script_urdu, summary_english },
-         "audio_url" | "audio_base64" (+ optional "audio_mime"),
-         "trace":     [ { agent, seconds, output } ]
-       }
+   KisaanAI Pro - script.js (Updated with Additive Router & Views)
    ========================================================================== */
 
 (() => {
@@ -40,7 +15,10 @@
     MAX_RECORD_SECONDS: 60,
     REQUEST_TIMEOUT_MS: 120000,
     STORAGE_KEY: 'kisaanai.apiUrl',
+    HISTORY_KEY: 'kisaanai.history',
+    FEEDBACK_KEY: 'kisaanai.feedback',
     CONFIDENCE_THRESHOLD: 60,
+    MAX_HISTORY_ITEMS: 50,
   };
 
   const AGENTS = [
@@ -109,7 +87,7 @@
     photoUrl: null,
     audioBlob: null,
     audioName: '',
-    audioSource: '',      // 'record' | 'upload'
+    audioSource: '',
     audioUrl: null,
     text: '',
     district: 'Lahore',
@@ -137,7 +115,11 @@
     'audioConsole', 'playBtn', 'playIcon', 'seek', 'curTime', 'durTime', 'speedBtn', 'downloadLink', 'audioEl', 'audioNote',
     'urduText', 'urduSummary',
     'traceToggle', 'tracePanel', 'traceCount', 'traceTotal', 'traceBar', 'traceLegend', 'traceList', 'copyTrace', 'expandAll',
-    'toasts',
+    'toasts', 'globalDemoBtn',
+    'medicinesListContainer', 'medSearch', 'medCropFilter', 'medTypeFilter',
+    'universalPrecautionsListFull', 'historyListContainer', 'clearHistoryBtn',
+    'productPrecautionsWrap', 'productPrecautionsList', 'feedbackCard',
+    'tavilySearchInput', 'tavilySearchBtn', 'tavilyResultsContainer', 'tavilyAnswer', 'tavilyResultsList'
   ].forEach((id) => { els[id] = $(id); });
 
   /* ------------------------------------------------------------------ *
@@ -155,6 +137,295 @@
     const kill = () => { el.classList.add('is-leaving'); setTimeout(() => el.remove(), 260); };
     const timer = setTimeout(kill, ms);
     el.addEventListener('click', () => { clearTimeout(timer); kill(); });
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Router (New Addition)
+   * ------------------------------------------------------------------ */
+  const ROUTES = {
+    '#/diagnose': 'viewDiagnose',
+    '#/medicines': 'viewMedicines',
+    '#/how-it-works': 'viewHowItWorks',
+    '#/precautions': 'viewPrecautions',
+    '#/history': 'viewHistory',
+    '#/settings': 'viewSettings',
+  };
+
+  function handleRoute() {
+    let hash = location.hash || '#/diagnose';
+    if (!ROUTES[hash]) hash = '#/diagnose';
+
+    // Update view visibility
+    Object.entries(ROUTES).forEach(([routeHash, viewId]) => {
+      const el = $(viewId);
+      if (!el) return;
+      const isActive = routeHash === hash;
+      el.classList.toggle('active', isActive);
+      el.hidden = !isActive;
+    });
+
+    // Update nav links active state
+    document.querySelectorAll('.nav-links a').forEach((a) => {
+      const href = a.getAttribute('href');
+      a.classList.toggle('active', href === hash);
+    });
+
+    // Render specific page data if needed
+    if (hash === '#/medicines') renderMedicinesPage();
+    if (hash === '#/precautions') renderPrecautionsPage();
+    if (hash === '#/history') renderHistoryPage();
+  }
+
+  function bindRouter() {
+    window.addEventListener('hashchange', handleRoute);
+    if (!location.hash) history.replaceState(null, '', '#/diagnose');
+    handleRoute();
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Medicines Page Logic (New Addition)
+   * ------------------------------------------------------------------ */
+  function renderMedicinesPage() {
+    if (!els.medicinesListContainer) return;
+    const data = window.KisaanData || {};
+    const products = data.PRODUCTS || [];
+
+    // Populate crop filter options dynamically
+    if (els.medCropFilter && els.medCropFilter.options.length <= 1) {
+      const crops = [...new Set(products.flatMap(p => [].concat(p.crop)).filter(c => c && c !== 'TODO_VERIFY'))];
+      crops.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        els.medCropFilter.appendChild(opt);
+      });
+    }
+
+    const searchQ = (els.medSearch?.value || '').toLowerCase();
+    const cropQ = els.medCropFilter?.value || '';
+    const typeQ = els.medTypeFilter?.value || '';
+
+    const filtered = products.filter(p => {
+      const matchSearch = !searchQ || p.name.toLowerCase().includes(searchQ) || (p.active_ingredient && p.active_ingredient.toLowerCase().includes(searchQ));
+      const matchCrop = !cropQ || [].concat(p.crop).includes(cropQ);
+      const matchType = !typeQ || p.type === typeQ;
+      return matchSearch && matchCrop && matchType;
+    });
+
+    if (!filtered.length) {
+      els.medicinesListContainer.innerHTML = '<p class="muted" style="grid-column: 1/-1; text-align:center; padding:32px;">No products found.</p>';
+      return;
+    }
+
+    els.medicinesListContainer.innerHTML = filtered.map(p => `
+      <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; gap:12px;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+            <h3 style="font-size:1.05rem; font-weight:700;">${escapeHtml(p.name)}</h3>
+            <span class="badge ${p.in_stock ? 'badge-success' : 'badge-warn'}">${p.in_stock ? 'In Stock' : 'Out of Stock'}</span>
+          </div>
+          <p class="muted" style="font-size:0.82rem; margin-top:4px;">Crop: <b>${escapeHtml([].concat(p.crop).join(', '))}</b> | Type: <b>${escapeHtml(p.type)}</b></p>
+          <div style="margin-top:10px; font-size:0.88rem; display:flex; flex-direction:column; gap:4px;">
+            <div>Active Ingredient: <b>${p.active_ingredient === 'TODO_VERIFY' ? '<span class="muted">Coming soon / جلد آ رہا ہے</span>' : escapeHtml(p.active_ingredient)}</b></div>
+            <div>Pack Size: <b>${escapeHtml(p.pack_size)}</b></div>
+            <div>Price: <b style="color:var(--emerald-400);">PKR ${escapeHtml(p.price_pkr)}</b> <span class="muted" style="font-size:0.75rem;">(approx., check your shop)</span></div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function bindMedicinesFilters() {
+    [els.medSearch, els.medCropFilter, els.medTypeFilter].forEach(el => {
+      if (el) el.addEventListener('input', renderMedicinesPage);
+      if (el) el.addEventListener('change', renderMedicinesPage);
+    });
+  }
+
+    /* ------------------------------------------------------------------ *
+   * Tavily Online Search (New Addition)
+   * ------------------------------------------------------------------ */
+  async function searchMedicineOnline() {
+    const input = els.tavilySearchInput;
+    const btn = els.tavilySearchBtn;
+    const resultsContainer = els.tavilyResultsContainer;
+    const answerBox = els.tavilyAnswer;
+    const listBox = els.tavilyResultsList;
+
+    const query = input?.value.trim();
+    if (!query) {
+      toast('Please enter a medicine or disease name to search.', 'info');
+      return;
+    }
+
+    // UI Loading state
+    btn.disabled = true;
+    btn.querySelector('span').textContent = 'Searching...';
+    resultsContainer.style.display = 'block';
+    answerBox.style.display = 'none';
+    listBox.innerHTML = '<p class="muted">Searching online, please wait...</p>';
+
+    try {
+      const res = await fetch(`${state.apiUrl}/api/search-medicine`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: `${query} Pakistan agriculture pesticide` })
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.detail || data.error || 'Search failed');
+
+      // Display AI Answer
+      if (data.answer) {
+        answerBox.style.display = 'block';
+        answerBox.innerHTML = `
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <svg class="i" style="color: var(--emerald-400); flex: none; margin-top: 2px;"><use href="#i-info"/></svg>
+            <div>
+              <strong style="display: block; margin-bottom: 6px;">Unverified web summary</strong>
+              <p style="font-size: 0.9rem; color: var(--text-2); margin: 0;">${escapeHtml(data.answer)}</p>
+              <p class="muted" style="font-size: 0.78rem; margin: 6px 0 0;">Generated from web pages and not checked by KisaanAI. Confirm the product, dose and price with your agriculture officer or shop.</p>
+            </div>
+          </div>
+        `;
+      }
+
+      // Display Search Results
+      if (!data.results || data.results.length === 0) {
+        listBox.innerHTML = '<p class="muted">No online results found.</p>';
+      } else {
+                listBox.innerHTML = data.results.map(r => {
+          // Content ko 200 characters tak limit karein
+          let snippet = r.content || '';
+          if (snippet.length > 200) snippet = snippet.substring(0, 200) + '...';
+          
+          // HTML entities ko clean karein
+          snippet = snippet.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+
+          return `
+          <div class="card" style="display: flex; flex-direction: column; gap: 6px;">
+            <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" 
+               style="font-weight: 600; color: var(--emerald-400); text-decoration: underline; font-size: 1rem;">
+              ${escapeHtml(r.title || 'Untitled')}
+            </a>
+            <p style="font-size: 0.85rem; color: var(--text-2); margin: 0; line-height: 1.5;">${escapeHtml(snippet)}</p>
+            <a href="${escapeHtml(r.url)}" target="_blank" class="muted" style="font-size: 0.75rem; text-decoration: underline;">
+              ${escapeHtml(r.url)}
+            </a>
+          </div>
+        `}).join('');
+      }
+    } catch (err) {
+      console.error(err);
+      listBox.innerHTML = `<p class="muted" style="color: var(--red-300);">Error: ${escapeHtml(err.message || 'Search failed')}</p>`;
+    } finally {
+      btn.disabled = false;
+      btn.querySelector('span').textContent = 'Online Search';
+    }
+  }
+
+  function bindTavilySearch() {
+    if (els.tavilySearchBtn) els.tavilySearchBtn.addEventListener('click', searchMedicineOnline);
+    if (els.tavilySearchInput) {
+      els.tavilySearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); searchMedicineOnline(); }
+      });
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Precautions Page Logic (New Addition)
+   * ------------------------------------------------------------------ */
+  function renderPrecautionsPage() {
+    if (!els.universalPrecautionsListFull) return;
+    const data = window.KisaanData || {};
+    const precautions = data.PRECAUTIONS_UNIVERSAL || DEFAULT_SAFETY;
+    els.universalPrecautionsListFull.innerHTML = precautions.map(s => `
+      <li style="display:flex; gap:12px; align-items:flex-start; padding:12px; border-radius:10px; background:rgba(255,255,255,0.7); border:1px solid var(--stroke);">
+        <svg class="i" aria-hidden="true" style="color:var(--emerald-400); flex:none; margin-top:2px;"><use href="#i-shield"/></svg>
+        <span style="font-size:0.92rem; color:var(--text-2);">${escapeHtml(s)}</span>
+      </li>
+    `).join('');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * History & LocalStorage Logic (New Addition)
+   * ------------------------------------------------------------------ */
+  function saveToHistory(res) {
+    try {
+      const history = JSON.parse(storage.get(CONFIG.HISTORY_KEY) || '[]');
+      const entry = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString(),
+        crop: res.diagnosis?.crop || res.heard?.crop || 'Unknown',
+        disease: res.diagnosis?.disease || 'Unknown',
+        confidence: toPct(res.diagnosis?.confidence),
+        thumb: state.photoUrl || null,
+      };
+      history.unshift(entry);
+      if (history.length > CONFIG.MAX_HISTORY_ITEMS) history.pop();
+      storage.set(CONFIG.HISTORY_KEY, JSON.stringify(history));
+    } catch {
+      // Storage quota or unavailable
+    }
+  }
+
+  function renderHistoryPage() {
+    if (!els.historyListContainer) return;
+    let history = [];
+    try {
+      history = JSON.parse(storage.get(CONFIG.HISTORY_KEY) || '[]');
+    } catch {
+      history = [];
+    }
+
+    if (!history.length) {
+      els.historyListContainer.innerHTML = '<div class="card" style="text-align:center; padding:32px;"><p class="muted">No past diagnoses found.</p></div>';
+      return;
+    }
+
+    els.historyListContainer.innerHTML = history.map(item => `
+      <div class="history-item">
+        <div style="display:flex; align-items:center; gap:14px;">
+          ${item.thumb ? `<img src="${item.thumb}" alt="Leaf thumbnail" style="width:48px; height:48px; border-radius:8px; object-fit:cover;">` : `<div style="width:48px; height:48px; border-radius:8px; background:var(--bg-2); display:grid; place-items:center;"><svg class="i" style="color:var(--muted);"><use href="#i-leaf"/></svg></div>`}
+          <div>
+            <h3 style="font-size:0.98rem; font-weight:650;">${escapeHtml(item.crop)} — ${escapeHtml(item.disease)}</h3>
+            <p class="muted" style="font-size:0.8rem; margin-top:2px;">Diagnosed on ${escapeHtml(item.date)} | Confidence: <b>${item.confidence}%</b></p>
+          </div>
+        </div>
+        <a href="#/diagnose" class="btn btn-ghost btn-sm">View Result</a>
+      </div>
+    `).join('');
+  }
+
+  function bindHistory() {
+    if (els.clearHistoryBtn) {
+      els.clearHistoryBtn.addEventListener('click', () => {
+        storage.set(CONFIG.HISTORY_KEY, null);
+        renderHistoryPage();
+        toast('Diagnosis history cleared.', 'success');
+      });
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Feedback Logic (New Addition)
+   * ------------------------------------------------------------------ */
+  function bindFeedback() {
+    if (!els.feedbackCard) return;
+    els.feedbackCard.querySelectorAll('button[data-feedback]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.dataset.feedback;
+        try {
+          const feedbackLog = JSON.parse(storage.get(CONFIG.FEEDBACK_KEY) || '[]');
+          feedbackLog.push({ timestamp: Date.now(), rating: val, result: state.result?.diagnosis?.disease });
+          storage.set(CONFIG.FEEDBACK_KEY, JSON.stringify(feedbackLog));
+        } catch {}
+        toast('Thank you for your feedback! / آپ کے تبصرے کا شکریہ', 'success', 3000);
+        els.feedbackCard.style.opacity = '0.6';
+        els.feedbackCard.style.pointerEvents = 'none';
+      });
+    });
   }
 
   /* ------------------------------------------------------------------ *
@@ -253,13 +524,15 @@
     if (state.photoUrl) URL.revokeObjectURL(state.photoUrl);
     state.photo = file;
     state.photoUrl = URL.createObjectURL(file);
-    els.photoPreview.src = state.photoUrl;
-    els.photoName.textContent = file.name || 'Pasted image';
-    els.photoSize.textContent = formatBytes(file.size);
-    els.dzIdle.hidden = true;
-    els.dzPreview.hidden = false;
-    els.dropzone.classList.add('has-file');
-    els.dropzone.setAttribute('aria-label', `Leaf photo added: ${file.name || 'pasted image'}. Press Enter to choose a different file.`);
+    if (els.photoPreview) els.photoPreview.src = state.photoUrl;
+    if (els.photoName) els.photoName.textContent = file.name || 'Pasted image';
+    if (els.photoSize) els.photoSize.textContent = formatBytes(file.size);
+    if (els.dzIdle) els.dzIdle.hidden = true;
+    if (els.dzPreview) els.dzPreview.hidden = false;
+    if (els.dropzone) {
+      els.dropzone.classList.add('has-file');
+      els.dropzone.setAttribute('aria-label', `Leaf photo added: ${file.name || 'pasted image'}. Press Enter to choose a different file.`);
+    }
     updateCta();
   }
 
@@ -925,9 +1198,10 @@
     countUp(els.mConfValue, pct);
     requestAnimationFrame(() => requestAnimationFrame(() => { if (els.mConfFill) els.mConfFill.style.width = `${pct}%`; }));
 
-    const sev = String(d.severity || 'unknown').toLowerCase();
+    const unsure = d.needs_follow_up || /^(unknown|-)?$/i.test(String(d.disease || ''));
+    const sev = unsure ? 'unknown' : String(d.severity || 'unknown').toLowerCase();
     if (els.mSeverity) {
-      els.mSeverity.textContent = sev;
+      els.mSeverity.textContent = sev === 'unknown' ? '-' : sev;
       els.mSeverity.dataset.level = ['low', 'medium', 'high'].includes(sev) ? sev : 'unknown';
     }
     if (els.mSeveritySub) {
@@ -1020,6 +1294,7 @@
 
     const note = document.getElementById('treatNote');
     if (note) {
+      note.hidden = !has;
       note.textContent = approved.some((r) => r.origin === 'web' || r.origin === 'ai')
         ? 'Some options below come from the web or the AI\'s general knowledge and are NOT verified. Confirm the product and dose with an agriculture officer before using them.'
         : 'Every dose and brand below was found in a local source and checked by the Verifier agent.';
@@ -1039,6 +1314,7 @@
     renderTreatment(res);
     setupPlayer(res);
     renderTrace(res.trace);
+    saveToHistory(res); // New Addition: Save successful diagnosis to history
   }
 
   /* ------------------------------------------------------------------ *
@@ -1417,17 +1693,58 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * Global Demo Button Trigger (New Addition)
+   * ------------------------------------------------------------------ */
+  function bindGlobalDemo() {
+    if (els.globalDemoBtn) {
+      els.globalDemoBtn.addEventListener('click', async () => {
+        location.hash = '#/diagnose';
+        // Simulate sample leaf & voice loading if empty
+        if (!state.photo) {
+          // Fetch demo asset or mock blob for run
+          try {
+            const resp = await fetch('assets/sample-leaf.jpg');
+            if (resp.ok) {
+              const blob = await resp.blob();
+              setPhoto(new File([blob], 'sample-leaf.jpg', { type: 'image/jpeg' }));
+            }
+          } catch {
+            // Fallback mock file if fetch fails
+            const canvas = document.createElement('canvas');
+            canvas.width = 100; canvas.height = 100;
+            canvas.toBlob(blob => {
+              if (blob) setPhoto(new File([blob], 'sample-leaf.jpg', { type: 'image/jpeg' }));
+            }, 'image/jpeg');
+          }
+        }
+        if (!state.audioBlob && !state.text) {
+          state.text = 'मेरी फसल के पत्ते खराब हो रहे हैं';
+          if (els.typedText) { els.typedText.value = state.text; applyDir(els.typedText); }
+        }
+        updateCta();
+        run();
+      });
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
    * Init
    * ------------------------------------------------------------------ */
   function init() {
     Stepper.build();
     initApiUrl();
+    bindRouter(); // New Addition
     bindPhoto();
     bindTabs();
     bindRecorder();
     bindUploadAndText();
     bindPlayer();
     bindTrace();
+    bindMedicinesFilters(); // New Addition
+    bindTavilySearch();
+    bindHistory(); // New Addition
+    bindFeedback(); // New Addition
+    bindGlobalDemo(); // New Addition
 
     if (els.districtSelect) state.district = els.districtSelect.value;
     if (els.runBtn) els.runBtn.addEventListener('click', run);

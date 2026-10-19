@@ -1014,6 +1014,9 @@ OFFICER_EN = ("No verified treatment is available, so do not spray anything on y
 HEALTHY_URDU = "اپنے کھیت کا ہر ہفتے معائنہ کرتے رہیں، اور کوئی علامت نظر آئے تو اپنے قریبی زرعی افسر سے مشورہ لیں۔"
 HEALTHY_EN = "Keep checking your field every week and ask your agriculture officer if you see any symptoms."
 
+UNSURE_CLOSING_URDU = "اگر ممکن ہو تو پودا اپنے قریبی زرعی افسر کو بھی دکھائیں۔"
+UNSURE_CLOSING_EN = "If possible, also show the plant to your nearest agriculture officer."
+
 HEALTHY_BODY_URDU = "آپ کا پودا دیکھنے میں صحت مند لگتا ہے۔"
 UNSURE_BODY_URDU = ("ہم تصویر سے بیماری کی پکی پہچان نہیں کر سکے۔ "
                     "براہ کرم پتے کے دونوں طرف کی صاف اور قریب سے لی ہوئی تصویر دوبارہ بھیجیں۔")
@@ -1057,6 +1060,8 @@ def closing_for(status: str, approved: list) -> tuple[str, str]:
     """Pick the fixed closing text: spray safety only when a verified treatment is actually being recommended."""
     if status == "healthy":
         return HEALTHY_URDU, HEALTHY_EN
+    if status == "uncertain":
+        return UNSURE_CLOSING_URDU, UNSURE_CLOSING_EN
     if status == "disease" and approved:
         return SPRAY_SAFETY_URDU, SPRAY_SAFETY_EN
     return OFFICER_URDU, OFFICER_EN
@@ -1243,18 +1248,7 @@ async def _tts(text: str, path: str):
     await edge_tts.Communicate(text, TTS_VOICE).save(path)
 
 def tts(text: str, path: str) -> str:
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = None
-
-    if loop and loop.is_running():
-        import concurrent.futures
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            future = pool.submit(asyncio.run, _tts(text, path))
-            future.result()
-    else:
-        asyncio.run(_tts(text, path))
+    asyncio.run(_tts(text, path))
     return path
 
 # =============================================================================

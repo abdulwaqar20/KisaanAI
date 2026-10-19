@@ -9,6 +9,9 @@ import threading
 import time
 from pathlib import Path
 
+import httpx                                      # <-- Added for Tavily API call
+from pydantic import BaseModel                    # <-- Added for request body validation
+
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -29,6 +32,60 @@ def health():
     return {"app": "kisaanai", "ok": True, "key": agents.has_server_key()}
 
 
+# ------------------------------------------------------------------ #
+# Tavily Online Search (New Addition)
+# ------------------------------------------------------------------ #
+class SearchQuery(BaseModel):
+    query: str
+
+
+@app.post("/api/search-medicine")
+async def search_medicine(payload: SearchQuery):
+    tavily_key = os.getenv("TAVILY_API_KEY")
+    if not tavily_key:
+        raise HTTPException(500, "TAVILY_API_KEY is not set on the server.")
+
+    # Hum query ko improve kar rahe hain taake Tavily ko sahi cheez mile
+    search_query = f"Pakistan agriculture pesticide medicine: {payload.query} price, quantity, weight, brand"
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.post(
+                "https://api.tavily.com/search",
+                json={
+                    "api_key": tavily_key,
+                    "query": search_query,
+                    "search_depth": "advanced",  # <-- Advanced kar dein taake behtar results aayen
+                    "include_answer": True,
+                    "max_results": 3,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            # Agar Tavily ka AI answer khali ho, toh hum khud results se summary bana sakte hain
+            answer = data.get("answer")
+            
+            return {
+                "answer": answer,
+                "results": [
+                    {
+                        "title": r.get("title"),
+                        "url": r.get("url"),
+                        "content": r.get("content"),
+                    }
+                    for r in data.get("results", [])
+                ],
+            }
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(502, f"Tavily returned an error: {e.response.status_code}")
+    except Exception as e:
+        raise HTTPException(500, f"Search failed: {str(e)}")
+
+
+# ------------------------------------------------------------------ #
+# Original Diagnosis Route (Untouched)
+# ------------------------------------------------------------------ #
 def _line(obj) -> bytes:
     return (json.dumps(obj, ensure_ascii=False, default=str) + "\n").encode()
 
