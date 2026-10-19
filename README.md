@@ -4,29 +4,6 @@
 
 ---
 
-## Submission details
-
-| Field | Value |
-|---|---|
-| Project Screenshots Link | **TODO:** paste the Google Drive / image link here (set access to *Anyone with the link can view* and test it) |
-| GitHub / Repository Link | **TODO:** `https://github.com/<user>/<repo>` |
-| Live demo (optional) | **TODO:** Render URL, if deployed |
-| Repository access | ☐ I confirm that my repository is publicly accessible or that the judging panel has been granted the necessary access. *(tick this box before submitting)* |
-
-### README checklist → where to find it
-
-| Checklist item | Section |
-|---|---|
-| Problem statement and solution | [1](#1-problem-statement-and-solution) |
-| Technology stack | [2](#2-technology-stack) |
-| Setup and installation instructions | [3](#3-setup-and-installation) |
-| AI methodology and implementation | [4](#4-ai-methodology-and-implementation) |
-| AI model names and API usage | [5](#5-ai-model-names-and-api-usage) |
-| Product screenshots | [6](#6-product-screenshots) |
-| Team member contributions | [9](#9-team-member-contributions) |
-
----
-
 ## 1. Problem statement and solution
 
 ### The problem
