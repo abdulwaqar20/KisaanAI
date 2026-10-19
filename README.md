@@ -4,6 +4,9 @@
 
 ---
 
+## 🎥 Video Demo
+Watch the live demo of KisaanAI here: [KisaanAI Demo Video](https://www.loom.com/share/59c78648beb04e79b0d81eee5883f6a4)
+
 ## 1. Problem statement and solution
 
 ### The problem
@@ -67,8 +70,8 @@ If the system is not sure about the photo, it says so and asks for a clearer pic
 
 ### 1. Get the code
 ```bash
-git clone https://github.com/<user>/<repo>.git
-cd <repo>
+git clone https://github.com/abdulwaqar20/KisaanAI.git
+cd KisaanAI
 ```
 
 ### 2. Create a virtual environment and install packages
@@ -207,8 +210,8 @@ Each `knowledge/*.txt` file starts with one `SOURCE:` line (real document and li
 |---|---|
 | `citrus_canker_sargodha_trial.txt` | Rehman, M.A., Ali, S., Afzal, M.B.S., Khan, M.N. and Ali, M. (2020). *Efficacy of Chemicals and Botanical Extracts to Control Citrus Canker on Kinnow in Sargodha Region.* Vol. 6, Issue 2, pp. 101–107. <https://researcherslinks.com/current-issues/Efficacy-of-Chemicals-and-Botanical-Extracts/27/1/3448> |
 | `citrus_calendar_aciar.txt` | Ali, W., Falivene, S., Donovan, N., Tahir, T. and Khurshid, T. (Sept 2015). *Pakistan Citrus Management Calendar.* Australia-Pakistan Agriculture Sector Linkages Program (ASLP II and NSW DPI). <https://dev-research.aciar.gov.au/aik-saath/sites/_co-lab.aciar.gov.au.aik-saath/files/2020-09/Pakistan%20citrus%20calender.pdf> |
-| `pakistan_crop_kb.txt` | Crop–disease–treatment entries for 20 diseases of 9 crops (cotton, rice, wheat, tomato, citrus, mango, sugarcane, potato, chickpea). **TODO: add the real document name and link for this data, or state clearly that it is a draft that has not been checked against an official source.** |
-| `web/data.js` (Medicines page) | Product names, pack sizes and approximate prices. **TODO: state where the product and price data came from and the date it was collected.** Prices are shown as "approx., check your shop". |
+| `pakistan_crop_kb.txt` | Draft crop–disease–treatment entries for 20 diseases of 9 crops (cotton, rice, wheat, tomato, citrus, mango, sugarcane, potato, chickpea), compiled from general agricultural extension knowledge during the hackathon. It has **not** been checked against an official source, so treat it as a starting point that needs expert review. |
+| `web/data.js` (Medicines page) | Sample product names, pack sizes and approximate prices compiled in October 2026 for demonstration. Prices are indicative only, shown as "approx., check your shop", and must be confirmed with a local dealer and the product label. |
 
 ---
 
