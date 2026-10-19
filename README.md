@@ -262,20 +262,20 @@ Supported districts for the weather check: Lahore, Faisalabad, Multan, Bahawalpu
 
 ## 6. Product screenshots
 
-**Screenshots link:** **TODO:** paste the same Drive / image link as in the submission form.
-
-Add the images to `docs/screenshots/` so they show below.
-
 | | |
 |---|---|
 | ![Diagnose page](docs/screenshots/01-diagnose.png) | ![Agents working](docs/screenshots/02-agents-running.png) |
 | *Diagnose: photo, voice note and district* | *The five agents working live* |
-| ![Diagnosis result](docs/screenshots/03-diagnosis.png) | ![Verified and unverified recommendations](docs/screenshots/04-recommendations.png) |
-| *Diagnosis with the AI's own estimate and other possibilities* | *Treatments labelled Verified or Unverified, with sources* |
-| ![Urdu advice and audio](docs/screenshots/05-urdu-advice.png) | ![Medicines page](docs/screenshots/06-medicines.png) |
-| *Spoken Urdu advice and text* | *Medicines catalogue and online search* |
-| ![How it works](docs/screenshots/07-how-it-works.png) | ![Agent trace](docs/screenshots/08-agent-trace.png) |
-| *How it works page* | *Agent activity trace (inputs and outputs)* |
+| ![Diagnosis result](docs/screenshots/03-diagnosis.png) | ![Treatment plan](docs/screenshots/04-treatment-plan.png) |
+| *Diagnosis with the AI's own estimate and other possibilities* | *Verified treatments with sources (PARC, ACIAR)* |
+| ![Urdu advice and audio](docs/screenshots/05-urdu-advice.png) | ![Agent trace](docs/screenshots/06-agent-trace.png) |
+| *Spoken Urdu advice and text* | *Agent activity trace (inputs and outputs)* |
+| ![Medicines page](docs/screenshots/07-medicines.png) | ![How it works](docs/screenshots/08-how-it-works.png) |
+| *Medicines catalogue and online search* | *How it works page* |
+| ![History page](docs/screenshots/09-history.png) | ![Precautions page](docs/screenshots/10-precautions.png) |
+| *Diagnosis history* | *Universal precautions* |
+| ![Healthy leaf](docs/screenshots/11-healthy-diagnose.png) | |
+| *Healthy plant detection (skips treatment)* | |
 
 ---
 
@@ -306,8 +306,6 @@ Add the images to `docs/screenshots/` so they show below.
 | Name | Role | Contributions |
 |---|---|---|
 | **Abdul Waqar** | **Solo Developer** | Full stack development, AI agent pipeline design (agents.py), FastAPI backend, Urdu RTL dashboard UI, knowledge base curation, safety & verifier logic, deployment and testing. |
-
-The work areas in this repository, to help you fill in the table: AI agents and safety pipeline (`agents.py`) · backend API (`main.py`) · dashboard UI and Urdu RTL design (`web/`) · knowledge base, sources and aliases (`knowledge/`) · prompts, testing and deployment.
 
 ---
 
